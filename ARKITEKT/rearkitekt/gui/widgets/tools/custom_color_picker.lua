@@ -206,6 +206,10 @@ function M.render(ctx, size, h, s, v)
   local trc_x = center_x + cos_hue_angle * triangle_pc_x - sin_hue_angle * triangle_pc_y
   local trc_y = center_y + sin_hue_angle * triangle_pc_x + cos_hue_angle * triangle_pc_y
 
+  -- Get pure hue color for cursor
+  local r_hue, g_hue, b_hue = hsv_to_rgb(h, 1, 1)
+  local hue_color32 = ImGui.ColorConvertDouble4ToU32(r_hue/255, g_hue/255, b_hue/255, 1)
+
   -- NEW APPROACH: Grid of axis-aligned quads with proper color interpolation
   -- Calculate triangle bounding box
   local tri_min_x = math.min(tra_x, trb_x, trc_x)
