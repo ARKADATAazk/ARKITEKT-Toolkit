@@ -7,62 +7,11 @@
 package.path = reaper.ImGui_GetBuiltinPath() .. '/?.lua;' .. package.path
 local ImGui = require 'imgui' '0.10'
 local Colors = require('rearkitekt.core.colors')
-local CustomPicker = require('rearkitekt.gui.widgets.tools.custom_color_picker')
 
 local M = {}
-local hexrgb = Colors.hexrgb
 
 -- State for each picker instance
 local instances = {}
-
--- Convert RGB to HSV
-local function rgb_to_hsv(r, g, b)
-  r, g, b = r / 255, g / 255, b / 255
-  local max_c = math.max(r, g, b)
-  local min_c = math.min(r, g, b)
-  local delta = max_c - min_c
-
-  local h = 0
-  if delta ~= 0 then
-    if max_c == r then
-      h = ((g - b) / delta) % 6
-    elseif max_c == g then
-      h = (b - r) / delta + 2
-    else
-      h = (r - g) / delta + 4
-    end
-    h = h / 6
-  end
-
-  local s = (max_c == 0) and 0 or (delta / max_c)
-  local v = max_c
-
-  return h, s, v
-end
-
--- Convert HSV to RGB
-local function hsv_to_rgb(h, s, v)
-  local c = v * s
-  local x = c * (1 - math.abs((h * 6) % 2 - 1))
-  local m = v - c
-
-  local r, g, b
-  if h < 1/6 then
-    r, g, b = c, x, 0
-  elseif h < 2/6 then
-    r, g, b = x, c, 0
-  elseif h < 3/6 then
-    r, g, b = 0, c, x
-  elseif h < 4/6 then
-    r, g, b = 0, x, c
-  elseif h < 5/6 then
-    r, g, b = x, 0, c
-  else
-    r, g, b = c, 0, x
-  end
-
-  return math.floor((r + m) * 255), math.floor((g + m) * 255), math.floor((b + m) * 255)
-end
 
 --- Create or get a color picker instance
 --- @param id string Unique identifier for this picker
@@ -74,9 +23,6 @@ local function get_instance(id)
       current_color = 0xFF0000FF,  -- Default red
       backup_color = nil,
       first_open = true,
-      h = 0,
-      s = 1,
-      v = 1,
     }
   end
   return instances[id]
@@ -119,26 +65,42 @@ local function render_picker_contents(ctx, id, on_change)
   local inst = get_instance(id)
   local changed = false
 
-  -- Initialize HSV values if needed
-  if not inst.h then
-    local r = (inst.current_color >> 24) & 0xFF
-    local g = (inst.current_color >> 16) & 0xFF
-    local b = (inst.current_color >> 8) & 0xFF
-    inst.h, inst.s, inst.v = rgb_to_hsv(r, g, b)
-  end
+  -- Get cursor position before drawing
+  local cx, cy = ImGui.GetCursorScreenPos(ctx)
 
-  -- Use custom picker for enhanced rendering (size 195 for floating window)
-  local rv, new_h, new_s, new_v = CustomPicker.render(ctx, 195, inst.h, inst.s, inst.v)
+  -- Color picker configuration
+  local picker_flags = ImGui.ColorEditFlags_PickerHueWheel |
+                       ImGui.ColorEditFlags_NoSidePreview |
+                       ImGui.ColorEditFlags_NoSmallPreview |
+                       ImGui.ColorEditFlags_NoAlpha |
+                       ImGui.ColorEditFlags_NoInputs |
+                       ImGui.ColorEditFlags_NoLabel
+
+  -- Convert our RGBA to ImGui's ARGB format
+  local argb_color = Colors.rgba_to_argb(inst.current_color)
+
+  -- Draw the color picker (hue wheel + triangle) - native ImGui for smooth gradients
+  local rv, new_argb_color = ImGui.ColorPicker4(ctx, '##picker_' .. id, argb_color, picker_flags)
+
+  -- Draw custom black borders on top
+  local draw_list = ImGui.GetWindowDrawList(ctx)
+  local size = 195  -- ImGui's default picker size
+  local wheel_thickness = size * 0.08
+  local wheel_r_outer = size * 0.50
+  local wheel_r_inner = wheel_r_outer - wheel_thickness
+  local center_x = cx + size * 0.5
+  local center_y = cy + size * 0.5
+
+  -- Draw black circles for wheel borders
+  local col_black = 0xFF000000
+  ImGui.DrawList_AddCircle(draw_list, center_x, center_y, wheel_r_outer, col_black, 64, 2.0)
+  ImGui.DrawList_AddCircle(draw_list, center_x, center_y, wheel_r_inner, col_black, 64, 2.0)
 
   -- Track color changes during dragging, but only apply on mouse release
   if rv then
-    inst.h = new_h
-    inst.s = new_s
-    inst.v = new_v
-
-    -- Convert HSV back to RGB and then to RGBA color
-    local r, g, b = hsv_to_rgb(inst.h, inst.s, inst.v)
-    inst.current_color = (math.floor(r) << 24) | (math.floor(g) << 16) | (math.floor(b) << 8) | 0xFF
+    -- Convert ImGui's ARGB back to our RGBA format
+    local new_rgba = Colors.argb_to_rgba(new_argb_color)
+    inst.current_color = new_rgba
     changed = true
 
     -- Store that we have a pending change
@@ -260,25 +222,41 @@ function M.render_inline(ctx, id, config)
   -- Set initial color if provided
   if config.initial_color and inst.first_open then
     inst.current_color = config.initial_color
-    -- Convert to HSV for the picker
-    local r = (inst.current_color >> 24) & 0xFF
-    local g = (inst.current_color >> 16) & 0xFF
-    local b = (inst.current_color >> 8) & 0xFF
-    inst.h, inst.s, inst.v = rgb_to_hsv(r, g, b)
     inst.first_open = false
   end
 
-  -- Use custom picker for enhanced rendering
-  local changed, new_h, new_s, new_v = CustomPicker.render(ctx, size, inst.h, inst.s, inst.v)
+  -- Get cursor position before drawing
+  local cx, cy = ImGui.GetCursorScreenPos(ctx)
 
-  if changed then
-    inst.h = new_h
-    inst.s = new_s
-    inst.v = new_v
+  -- Color picker configuration
+  local picker_flags = ImGui.ColorEditFlags_PickerHueWheel |
+                       ImGui.ColorEditFlags_NoSidePreview |
+                       ImGui.ColorEditFlags_NoSmallPreview |
+                       ImGui.ColorEditFlags_NoAlpha |
+                       ImGui.ColorEditFlags_NoInputs |
+                       ImGui.ColorEditFlags_NoLabel
 
-    -- Convert HSV (0-1 range) back to RGB (0-255 range) and then to RGBA color
-    local r, g, b = hsv_to_rgb(inst.h, inst.s, inst.v)
-    inst.current_color = (math.floor(r) << 24) | (math.floor(g) << 16) | (math.floor(b) << 8) | 0xFF
+  -- Convert to ARGB for ImGui
+  local argb_color = Colors.rgba_to_argb(inst.current_color)
+
+  -- Draw native ImGui picker (smooth GPU-interpolated gradients)
+  local rv, new_argb_color = ImGui.ColorPicker4(ctx, '##picker_inline_' .. id, argb_color, picker_flags)
+
+  -- Draw custom black borders on top
+  local draw_list = ImGui.GetWindowDrawList(ctx)
+  local wheel_thickness = size * 0.08
+  local wheel_r_outer = size * 0.50
+  local wheel_r_inner = wheel_r_outer - wheel_thickness
+  local center_x = cx + size * 0.5
+  local center_y = cy + size * 0.5
+
+  -- Draw black circles for wheel borders (thicker, more visible)
+  local col_black = 0xFF000000
+  ImGui.DrawList_AddCircle(draw_list, center_x, center_y, wheel_r_outer, col_black, 64, 2.5)
+  ImGui.DrawList_AddCircle(draw_list, center_x, center_y, wheel_r_inner, col_black, 64, 2.5)
+
+  if rv then
+    inst.current_color = Colors.argb_to_rgba(new_argb_color)
     inst.pending_change = true
   end
 
@@ -290,7 +268,7 @@ function M.render_inline(ctx, id, config)
     end
   end
 
-  return changed
+  return rv
 end
 
 --- Initialize inline picker (call this to show it)
@@ -301,11 +279,6 @@ function M.show_inline(id, initial_color)
   inst.first_open = true
   if initial_color then
     inst.current_color = initial_color
-    -- Convert to HSV
-    local r = (initial_color >> 24) & 0xFF
-    local g = (initial_color >> 16) & 0xFF
-    local b = (initial_color >> 8) & 0xFF
-    inst.h, inst.s, inst.v = rgb_to_hsv(r, g, b)
   end
 end
 
