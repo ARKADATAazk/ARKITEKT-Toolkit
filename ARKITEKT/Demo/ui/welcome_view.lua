@@ -44,10 +44,8 @@ function M.render(ctx, state)
   ImGui.Spacing(ctx)
   ImGui.Spacing(ctx)
 
-  -- Title
-  ImGui.PushFont(ctx, ImGui.GetFont(ctx))
+  -- Title (Shell already sets default font, no need to push)
   ImGui.TextColored(ctx, hexrgb("#F8FAFC"), "ARKITEKT Framework Demo")
-  ImGui.PopFont(ctx)
 
   ImGui.Spacing(ctx)
 

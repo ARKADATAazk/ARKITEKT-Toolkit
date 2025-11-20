@@ -35,17 +35,13 @@ local hexrgb = Colors.hexrgb
 -- @param title string Section title
 -- @param description string Section description
 local function draw_section_header(ctx, title, description)
-  ImGui.PushFont(ctx, ImGui.GetFont(ctx)) -- Use default font
-
-  -- Title
+  -- Title (Shell already sets fonts, just use text functions)
   ImGui.TextColored(ctx, hexrgb("#A78BFA"), title)
 
   -- Description
   ImGui.PushStyleColor(ctx, ImGui.Col_Text, hexrgb("#94A3B8"))
   ImGui.TextWrapped(ctx, description)
   ImGui.PopStyleColor(ctx)
-
-  ImGui.PopFont(ctx)
 
   ImGui.Spacing(ctx)
 end
@@ -508,10 +504,8 @@ end
 function M.render(ctx, state)
   ImGui.PushStyleVar(ctx, ImGui.StyleVar_WindowPadding, 20, 20)
 
-  -- Title
-  ImGui.PushFont(ctx, ImGui.GetFont(ctx))
+  -- Title (Shell already sets fonts)
   ImGui.TextColored(ctx, hexrgb("#F8FAFC"), "Primitives Showcase")
-  ImGui.PopFont(ctx)
 
   ImGui.PushStyleColor(ctx, ImGui.Col_Text, hexrgb("#94A3B8"))
   ImGui.Text(ctx, "Learn the basic building blocks of ARKITEKT interfaces")
