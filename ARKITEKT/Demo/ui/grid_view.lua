@@ -7,15 +7,6 @@
 -- PATTERN: Uses colorblock-style tiles similar to package tiles demo
 -- This is simplified for demonstration - real apps use full Grid widget
 
--- ============================================================================
--- BOOTSTRAP CHECK
--- ============================================================================
-
-if not ARK then
-  reaper.MB("This file requires bootstrap initialization from the main script", "Demo Error", 0)
-  return {}
-end
-
 package.path = reaper.ImGui_GetBuiltinPath() .. '/?.lua;' .. package.path
 local ImGui = require 'imgui' '0.10'
 
