@@ -1,197 +1,270 @@
 -- @noindex
 -- Demo/ui/grid_view.lua
 --
--- WHY THIS EXISTS: Showcase ARKITEKT's grid system with modern tile rendering
--- Demonstrates responsive layout, selection, and custom tile visuals
---
--- PATTERN: Uses colorblock-style tiles similar to package tiles demo
--- This is simplified for demonstration - real apps use full Grid widget
+-- Showcase ARKITEKT's grid and tile systems with Panel + tab_strip
 
 package.path = reaper.ImGui_GetBuiltinPath() .. '/?.lua;' .. package.path
 local ImGui = require 'imgui' '0.10'
 
 -- ARKITEKT dependencies
 local Colors = require('rearkitekt.core.colors')
-local Button = require('rearkitekt.gui.widgets.primitives.button')
+local Panel = require('rearkitekt.gui.widgets.containers.panel')
+local Shapes = require('rearkitekt.gui.rendering.shapes')
 local Tooltips = require('Demo.ui.tooltips')
 
 local M = {}
 local hexrgb = Colors.hexrgb
 
 -- ============================================================================
--- TILE RENDERER
+-- PANEL STATE
 -- ============================================================================
 
-local function render_tile(ctx, dl, x, y, size, item, is_selected, is_hovered)
+local panel = nil
+local active_tab = "parameters"
+
+local function init_panel()
+  local tab_items = {
+    { id = "parameters", label = "📋 Parameters" },
+    { id = "tiles", label = "🎨 Tiles" },
+  }
+
+  local tab_config = {
+    spacing = 0,
+    min_width = 80,
+    max_width = 150,
+    padding_x = 12,
+    chip_radius = 6,
+    on_change = function(new_tab)
+      active_tab = new_tab
+    end,
+  }
+
+  local panel_config = {
+    header = {
+      enabled = true,
+      height = 32,
+      elements = {
+        {
+          id = "tabs",
+          type = "tab_strip",
+          flex = 1,
+          spacing_before = 0,
+          config = tab_config,
+        },
+      },
+    },
+  }
+
+  panel = Panel.new({
+    id = "grid_demo_panel",
+    config = panel_config,
+  })
+
+  panel:set_tabs(tab_items, active_tab)
+end
+
+-- ============================================================================
+-- PARAMETER TILES (Vertical List)
+-- ============================================================================
+
+local function render_parameter_tile(ctx, dl, x, y, width, param, is_hovered)
+  local height = 72
+  local rounding = 6
+
+  -- Background
+  local bg_color = is_hovered and hexrgb("#2D3748") or hexrgb("#1E293B")
+  ImGui.DrawList_AddRectFilled(dl, x, y, x + width, y + height, bg_color, rounding)
+
+  -- Border
+  ImGui.DrawList_AddRect(dl, x, y, x + width, y + height, hexrgb("#334155"), rounding, 0, 1)
+
+  -- Icon circle (left side)
+  local icon_cx = x + 36
+  local icon_cy = y + height / 2
+  local icon_radius = 20
+
+  ImGui.DrawList_AddCircleFilled(dl, icon_cx, icon_cy, icon_radius, param.icon_color)
+
+  -- Icon text
+  local icon_w, icon_h = ImGui.CalcTextSize(ctx, param.icon)
+  ImGui.DrawList_AddText(dl, icon_cx - icon_w/2, icon_cy - icon_h/2, hexrgb("#FFFFFF"), param.icon)
+
+  -- Title
+  ImGui.DrawList_AddText(dl, x + 64, y + 12, hexrgb("#F8FAFC"), param.title)
+
+  -- Description
+  ImGui.DrawList_AddText(dl, x + 64, y + 32, hexrgb("#94A3B8"), param.description)
+
+  -- Value badge (right side)
+  local badge_text = param.value
+  local badge_w, badge_h = ImGui.CalcTextSize(ctx, badge_text)
+  local badge_x = x + width - badge_w - 16
+  local badge_y = y + height/2 - badge_h/2
+
+  ImGui.DrawList_AddText(dl, badge_x, badge_y, hexrgb("#60A5FA"), badge_text)
+
+  -- Hover indicator
+  if is_hovered then
+    ImGui.DrawList_AddRect(dl, x, y, x + width, y + height, hexrgb("#3B82F6"), rounding, 0, 2)
+  end
+
+  return height
+end
+
+local function render_parameters_tab(ctx, state)
+  local dl = ImGui.GetWindowDrawList(ctx)
+  local avail_w = ImGui.GetContentRegionAvail(ctx)
+
+  ImGui.Spacing(ctx)
+
+  -- Generate parameter data
+  local params = {
+    { icon = "⚡", icon_color = hexrgb("#F59E0B"), title = "Performance Mode", description = "Optimize for speed vs quality", value = "Balanced" },
+    { icon = "🎨", icon_color = hexrgb("#EC4899"), title = "Color Scheme", description = "Theme color palette selection", value = "Dark" },
+    { icon = "📐", icon_color = hexrgb("#3B82F6"), title = "Grid Density", description = "Items per row in grid view", value = "Auto" },
+    { icon = "🔊", icon_color = hexrgb("#10B981"), title = "Audio Quality", description = "Sample rate and bit depth", value = "48kHz" },
+    { icon = "💾", icon_color = hexrgb("#8B5CF6"), title = "Auto Save", description = "Automatic project backup", value = "Enabled" },
+    { icon = "🎯", icon_color = hexrgb("#EF4444"), title = "Snap Mode", description = "Grid snapping behavior", value = "1/16" },
+  }
+
+  local cursor_x, cursor_y = ImGui.GetCursorScreenPos(ctx)
+  local mouse_x, mouse_y = ImGui.GetMousePos(ctx)
+  local start_y = cursor_y
+  local gap = 8
+
+  for i, param in ipairs(params) do
+    local tile_x = cursor_x
+    local tile_y = start_y + (i - 1) * (72 + gap)
+
+    -- Check hover
+    local is_hovered = mouse_x >= tile_x and mouse_x <= tile_x + avail_w and
+                       mouse_y >= tile_y and mouse_y <= tile_y + 72
+
+    render_parameter_tile(ctx, dl, tile_x, tile_y, avail_w, param, is_hovered)
+
+    if is_hovered then
+      ImGui.SetTooltip(ctx, string.format("%s\n%s\nCurrent: %s", param.title, param.description, param.value))
+    end
+  end
+
+  -- Advance cursor
+  ImGui.SetCursorScreenPos(ctx, cursor_x, start_y + #params * (72 + gap))
+  ImGui.Dummy(ctx, 1, 1)
+end
+
+-- ============================================================================
+-- SQUARED TILES (Grid with Shapes)
+-- ============================================================================
+
+local function render_shape_tile(ctx, dl, x, y, size, tile, is_selected, is_hovered)
   local rounding = 8
 
-  -- Background color with selection/hover states
-  local bg_color = item.color
+  -- Background
+  local bg_color = tile.bg_color
   if is_selected then
     bg_color = Colors.adjust_brightness(bg_color, 1.3)
   elseif is_hovered then
     bg_color = Colors.adjust_brightness(bg_color, 1.15)
   end
 
-  -- Draw tile background
-  ImGui.DrawList_AddRectFilled(
-    dl,
-    x, y,
-    x + size, y + size,
-    bg_color,
-    rounding
-  )
+  ImGui.DrawList_AddRectFilled(dl, x, y, x + size, y + size, bg_color, rounding)
+
+  -- Draw shape in center
+  local cx = x + size / 2
+  local cy = y + size / 2
+  local shape_size = size * 0.35
+
+  if tile.shape == "star" then
+    Shapes.draw_star_filled(dl, cx, cy, shape_size, shape_size * 0.4, hexrgb("#FFFFFF"), 5)
+  elseif tile.shape == "circle" then
+    ImGui.DrawList_AddCircleFilled(dl, cx, cy, shape_size, hexrgb("#FFFFFF"))
+  elseif tile.shape == "square" then
+    local half = shape_size
+    ImGui.DrawList_AddRectFilled(dl, cx - half, cy - half, cx + half, cy + half, hexrgb("#FFFFFF"), 4)
+  elseif tile.shape == "triangle" then
+    ImGui.DrawList_PathClear(dl)
+    ImGui.DrawList_PathLineTo(dl, cx, cy - shape_size)
+    ImGui.DrawList_PathLineTo(dl, cx + shape_size, cy + shape_size)
+    ImGui.DrawList_PathLineTo(dl, cx - shape_size, cy + shape_size)
+    ImGui.DrawList_PathFillConvex(dl, hexrgb("#FFFFFF"))
+  end
+
+  -- Label at bottom
+  local label_w, label_h = ImGui.CalcTextSize(ctx, tile.name)
+  local label_x = x + (size - label_w) / 2
+  local label_y = y + size - label_h - 8
+
+  ImGui.DrawList_AddText(dl, label_x + 1, label_y + 1, hexrgb("#00000080"), tile.name)
+  ImGui.DrawList_AddText(dl, label_x, label_y, hexrgb("#FFFFFF"), tile.name)
 
   -- Selection border
   if is_selected then
-    ImGui.DrawList_AddRect(
-      dl,
-      x, y,
-      x + size, y + size,
-      hexrgb("#60A5FA"),
-      rounding,
-      0,
-      3
-    )
-  end
-
-  -- Item icon/emoji (centered)
-  local icon_x = x + size / 2 - 12
-  local icon_y = y + size / 2 - 20
-  ImGui.DrawList_AddText(dl, icon_x, icon_y, hexrgb("#FFFFFF"), item.icon)
-
-  -- Item name (bottom, centered)
-  local text_size_w, text_size_h = ImGui.CalcTextSize(ctx, item.name)
-  local text_x = x + (size - text_size_w) / 2
-  local text_y = y + size - text_size_h - 8
-
-  -- Text shadow for readability
-  ImGui.DrawList_AddText(dl, text_x + 1, text_y + 1, hexrgb("#00000080"), item.name)
-  ImGui.DrawList_AddText(dl, text_x, text_y, hexrgb("#FFFFFF"), item.name)
-
-  -- Badge (top-right corner)
-  if item.badge then
-    local badge_size = 20
-    local badge_x = x + size - badge_size - 4
-    local badge_y = y + 4
-
-    ImGui.DrawList_AddCircleFilled(
-      dl,
-      badge_x + badge_size / 2,
-      badge_y + badge_size / 2,
-      badge_size / 2,
-      hexrgb("#EF4444")
-    )
-
-    local badge_text = tostring(item.badge)
-    local badge_text_w, badge_text_h = ImGui.CalcTextSize(ctx, badge_text)
-    ImGui.DrawList_AddText(
-      dl,
-      badge_x + (badge_size - badge_text_w) / 2,
-      badge_y + (badge_size - badge_text_h) / 2,
-      hexrgb("#FFFFFF"),
-      badge_text
-    )
-  end
-
-  -- Hover overlay
-  if is_hovered and not is_selected then
-    ImGui.DrawList_AddRect(
-      dl,
-      x, y,
-      x + size, y + size,
-      hexrgb("#FFFFFF40"),
-      rounding,
-      0,
-      1
-    )
+    ImGui.DrawList_AddRect(dl, x, y, x + size, y + size, hexrgb("#60A5FA"), rounding, 0, 3)
+  elseif is_hovered then
+    ImGui.DrawList_AddRect(dl, x, y, x + size, y + size, hexrgb("#FFFFFF40"), rounding, 0, 1)
   end
 end
 
--- ============================================================================
--- GRID LAYOUT CALCULATOR
--- ============================================================================
+local function render_tiles_tab(ctx, state)
+  local dl = ImGui.GetWindowDrawList(ctx)
 
-local function calculate_grid_layout(available_width, tile_size, gap)
-  local columns = math.max(1, math.floor((available_width + gap) / (tile_size + gap)))
-  local total_gap_width = (columns - 1) * gap
-  local available_for_tiles = available_width - total_gap_width
-  local actual_tile_size = math.floor(available_for_tiles / columns)
+  -- Initialize tiles if needed
+  if not state.grid.shape_tiles then
+    state.grid.shape_tiles = {
+      { id = "star_red", name = "Star", shape = "star", bg_color = hexrgb("#EF4444") },
+      { id = "circle_blue", name = "Circle", shape = "circle", bg_color = hexrgb("#3B82F6") },
+      { id = "square_green", name = "Square", shape = "square", bg_color = hexrgb("#10B981") },
+      { id = "triangle_purple", name = "Triangle", shape = "triangle", bg_color = hexrgb("#8B5CF6") },
+      { id = "star_orange", name = "Star", shape = "star", bg_color = hexrgb("#F59E0B") },
+      { id = "circle_pink", name = "Circle", shape = "circle", bg_color = hexrgb("#EC4899") },
+      { id = "square_cyan", name = "Square", shape = "square", bg_color = hexrgb("#06B6D4") },
+      { id = "triangle_lime", name = "Triangle", shape = "triangle", bg_color = hexrgb("#84CC16") },
+    }
+    state.grid.shape_selection = {}
+  end
 
-  return columns, actual_tile_size
-end
+  ImGui.Spacing(ctx)
 
--- ============================================================================
--- GRID INTERACTION
--- ============================================================================
+  -- Grid layout
+  local avail_w = ImGui.GetContentRegionAvail(ctx)
+  local tile_size = 120
+  local gap = 12
+  local columns = math.max(1, math.floor((avail_w + gap) / (tile_size + gap)))
 
-local function handle_grid_interaction(ctx, items, columns, tile_size, gap, start_x, start_y, selected_items)
+  local cursor_x, cursor_y = ImGui.GetCursorScreenPos(ctx)
   local mouse_x, mouse_y = ImGui.GetMousePos(ctx)
   local is_mouse_clicked = ImGui.IsMouseClicked(ctx, 0)
 
-  local hovered_item = nil
+  local hovered_id = nil
 
-  for i, item in ipairs(items) do
+  for i, tile in ipairs(state.grid.shape_tiles) do
     local row = math.floor((i - 1) / columns)
     local col = (i - 1) % columns
 
-    local x = start_x + col * (tile_size + gap)
-    local y = start_y + row * (tile_size + gap)
+    local x = cursor_x + col * (tile_size + gap)
+    local y = cursor_y + row * (tile_size + gap)
 
-    -- Check if mouse is over this tile
-    if mouse_x >= x and mouse_x <= x + tile_size and
-       mouse_y >= y and mouse_y <= y + tile_size then
-      hovered_item = item.id
+    -- Check hover
+    local is_hovered = mouse_x >= x and mouse_x <= x + tile_size and
+                       mouse_y >= y and mouse_y <= y + tile_size
 
-      -- Handle click
+    if is_hovered then
+      hovered_id = tile.id
       if is_mouse_clicked then
-        -- Toggle selection
-        selected_items[item.id] = not selected_items[item.id]
+        state.grid.shape_selection[tile.id] = not state.grid.shape_selection[tile.id]
       end
-
-      -- Show tooltip
-      if item.tooltip then
-        ImGui.SetTooltip(ctx, item.tooltip)
-      end
+      ImGui.SetTooltip(ctx, string.format("%s\nShape: %s\nClick to select", tile.name, tile.shape))
     end
+
+    local is_selected = state.grid.shape_selection[tile.id]
+    render_shape_tile(ctx, dl, x, y, tile_size, tile, is_selected, is_hovered)
   end
 
-  return hovered_item
-end
-
--- ============================================================================
--- SAMPLE DATA GENERATOR
--- ============================================================================
-
-local function generate_sample_items()
-  local items = {}
-
-  local icons = {"📦", "🎨", "🎭", "🎪", "🎯", "🎲", "🎸", "🎹", "🎺", "🎻",
-                 "🎬", "🎮", "🎰", "🎱", "🏀", "🏈", "⚽", "🏐", "🏓", "🏸",
-                 "🎣", "🎿", "🏂", "🏋", "🚴", "🚵", "🏇", "⛷", "🏊", "🏄"}
-
-  local colors = {
-    hexrgb("#EF4444"), hexrgb("#F59E0B"), hexrgb("#10B981"),
-    hexrgb("#3B82F6"), hexrgb("#6366F1"), hexrgb("#8B5CF6"),
-    hexrgb("#EC4899"), hexrgb("#14B8A6"), hexrgb("#F97316"),
-    hexrgb("#84CC16"), hexrgb("#06B6D4"), hexrgb("#A855F7"),
-  }
-
-  for i = 1, 24 do
-    local icon = icons[((i - 1) % #icons) + 1]
-    local color = colors[((i - 1) % #colors) + 1]
-
-    items[i] = {
-      id = "item_" .. i,
-      name = "Item " .. i,
-      icon = icon,
-      color = color,
-      badge = (i % 5 == 0) and i or nil,
-      tooltip = "Click to select/deselect\n" .. icon .. " Item " .. i,
-    }
-  end
-
-  return items
+  -- Advance cursor
+  local total_rows = math.ceil(#state.grid.shape_tiles / columns)
+  local total_height = total_rows * tile_size + (total_rows - 1) * gap
+  ImGui.SetCursorScreenPos(ctx, cursor_x, cursor_y + total_height + 16)
+  ImGui.Dummy(ctx, 1, 1)
 end
 
 -- ============================================================================
@@ -199,169 +272,29 @@ end
 -- ============================================================================
 
 function M.render(ctx, state)
-  local dl = ImGui.GetWindowDrawList(ctx)
+  -- Initialize panel
+  if not panel then
+    init_panel()
+  end
 
-  -- Initialize grid state if needed
+  -- Initialize grid state
   if not state.grid then
     state.grid = {}
   end
 
-  if not state.grid.items then
-    state.grid.items = generate_sample_items()
+  -- Update active tab from panel
+  active_tab = panel:get_active_tab() or active_tab
+
+  -- Render panel
+  if panel:begin_draw(ctx) then
+    -- Render content based on active tab
+    if active_tab == "parameters" then
+      render_parameters_tab(ctx, state)
+    elseif active_tab == "tiles" then
+      render_tiles_tab(ctx, state)
+    end
   end
-
-  if not state.grid.selected_items then
-    state.grid.selected_items = {}
-  end
-
-  if not state.grid.tile_size then
-    state.grid.tile_size = 120
-  end
-
-  if not state.grid.gap then
-    state.grid.gap = 12
-  end
-
-  -- Header
-  ImGui.TextColored(ctx, hexrgb("#3B82F6"), "📦 Grid System Showcase")
-  ImGui.Spacing(ctx)
-
-  ImGui.PushStyleColor(ctx, ImGui.Col_Text, hexrgb("#94A3B8"))
-  ImGui.TextWrapped(ctx, "Responsive grid layout with modern tile rendering. Click tiles to select, hover for tooltips. This demonstrates the visual patterns used in production ARKITEKT apps.")
-  ImGui.PopStyleColor(ctx)
-
-  ImGui.Spacing(ctx)
-  ImGui.Separator(ctx)
-  ImGui.Spacing(ctx)
-
-  -- Controls
-  ImGui.Text(ctx, "Tile Size:")
-  ImGui.SameLine(ctx)
-  ImGui.SetNextItemWidth(ctx, 150)
-  local size_changed, new_size = ImGui.SliderInt(ctx, "##tile_size", state.grid.tile_size, 80, 180)
-  if size_changed then
-    state.grid.tile_size = new_size
-  end
-
-  ImGui.SameLine(ctx, 0, 16)
-  ImGui.Text(ctx, "Gap:")
-  ImGui.SameLine(ctx)
-  ImGui.SetNextItemWidth(ctx, 150)
-  local gap_changed, new_gap = ImGui.SliderInt(ctx, "##gap", state.grid.gap, 4, 24)
-  if gap_changed then
-    state.grid.gap = new_gap
-  end
-
-  ImGui.SameLine(ctx, 0, 16)
-
-  local cursor_x, cursor_y = ImGui.GetCursorScreenPos(ctx)
-  local clear_clicked = Button.draw(ctx, dl, cursor_x, cursor_y, 120, 28, {
-    label = "Clear Selection",
-    bg_color = hexrgb("#475569"),
-    bg_hover_color = hexrgb("#334155"),
-    text_color = hexrgb("#F8FAFC"),
-    rounding = 6,
-    tooltip = "Clear all selected tiles",
-  }, "clear_btn")
-
-  if clear_clicked then
-    state.grid.selected_items = {}
-  end
-
-  ImGui.SetCursorScreenPos(ctx, cursor_x + 125, cursor_y)
-
-  -- Selection count
-  local selected_count = 0
-  for _ in pairs(state.grid.selected_items) do
-    selected_count = selected_count + 1
-  end
-
-  ImGui.SameLine(ctx, 0, 16)
-  ImGui.Text(ctx, string.format("Selected: %d / %d", selected_count, #state.grid.items))
-
-  ImGui.Spacing(ctx)
-  ImGui.Spacing(ctx)
-
-  -- Grid rendering
-  local avail_w = ImGui.GetContentRegionAvail(ctx)
-  local columns, tile_size = calculate_grid_layout(avail_w, state.grid.tile_size, state.grid.gap)
-
-  cursor_x, cursor_y = ImGui.GetCursorScreenPos(ctx)
-  local grid_start_x = cursor_x
-  local grid_start_y = cursor_y
-
-  -- Handle interaction
-  local hovered_item = handle_grid_interaction(
-    ctx,
-    state.grid.items,
-    columns,
-    tile_size,
-    state.grid.gap,
-    grid_start_x,
-    grid_start_y,
-    state.grid.selected_items
-  )
-
-  -- Render tiles
-  for i, item in ipairs(state.grid.items) do
-    local row = math.floor((i - 1) / columns)
-    local col = (i - 1) % columns
-
-    local x = grid_start_x + col * (tile_size + state.grid.gap)
-    local y = grid_start_y + row * (tile_size + state.grid.gap)
-
-    local is_selected = state.grid.selected_items[item.id]
-    local is_hovered = (hovered_item == item.id)
-
-    render_tile(ctx, dl, x, y, tile_size, item, is_selected, is_hovered)
-  end
-
-  -- Calculate total height and advance cursor
-  local total_rows = math.ceil(#state.grid.items / columns)
-  local total_height = total_rows * tile_size + (total_rows - 1) * state.grid.gap
-  ImGui.SetCursorScreenPos(ctx, cursor_x, cursor_y + total_height + 16)
-
-  ImGui.Spacing(ctx)
-  ImGui.Separator(ctx)
-  ImGui.Spacing(ctx)
-
-  -- Production Grid Info
-  ImGui.TextColored(ctx, hexrgb("#A78BFA"), "🎯 Production Grid Features")
-  ImGui.Spacing(ctx)
-
-  ImGui.PushStyleColor(ctx, ImGui.Col_Text, hexrgb("#94A3B8"))
-  ImGui.TextWrapped(ctx, "This is a simplified grid for demonstration. The production Grid widget (rearkitekt.gui.widgets.containers.grid) provides:")
-  ImGui.PopStyleColor(ctx)
-
-  ImGui.Spacing(ctx)
-
-  local features = {
-    "• Factory pattern for custom tile types and renderers",
-    "• Drag & drop reordering with visual drop indicators",
-    "• Multi-selection (Ctrl+Click, Shift+Click, marquee)",
-    "• Spawn/destroy animations with TileFX system",
-    "• Selection rectangle across entire scrollable container",
-    "• Virtualization for efficient rendering of large datasets",
-    "• Marching ants selection borders",
-    "• Context menus and double-click behaviors",
-    "• Custom behaviors (inline editing, state toggles, etc.)",
-    "• Integration with Panel for scrolling and layout",
-  }
-
-  for _, feature in ipairs(features) do
-    ImGui.TextColored(ctx, hexrgb("#94A3B8"), feature)
-  end
-
-  ImGui.Spacing(ctx)
-  ImGui.Spacing(ctx)
-
-  ImGui.TextColored(ctx, hexrgb("#F59E0B"), "📚 Real Examples:")
-  ImGui.Spacing(ctx)
-  ImGui.BulletText(ctx, "Region_Playlist - Dual grids with drag & drop between them")
-  ImGui.BulletText(ctx, "ThemeAdjuster - Package tiles with conflict indicators")
-  ImGui.BulletText(ctx, "demos/demo.lua - Full package grid implementation")
-
-  ImGui.Dummy(ctx, 1, 20)
+  panel:end_draw(ctx)
 end
 
 return M
