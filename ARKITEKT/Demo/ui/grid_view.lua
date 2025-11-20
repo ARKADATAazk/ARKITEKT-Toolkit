@@ -21,6 +21,7 @@ local ImGui = require 'imgui' '0.10'
 local Colors = require('rearkitekt.core.colors')
 local Button = require('rearkitekt.gui.widgets.primitives.button')
 local State = require('Demo.core.state')
+local Tooltips = require('Demo.ui.tooltips')
 
 local M = {}
 local hexrgb = Colors.hexrgb
@@ -115,6 +116,11 @@ end
 
 local function showcase_simple_grid(ctx, state)
   ImGui.Text(ctx, "Simple Grid Layout:")
+  ImGui.SameLine(ctx, 0, 8)
+  ImGui.TextColored(ctx, hexrgb("#94A3B8"), "(?)")
+  if ImGui.IsItemHovered(ctx) then
+    ImGui.SetTooltip(ctx, Tooltips.GRID.simple_grid)
+  end
   ImGui.Spacing(ctx)
 
   ImGui.PushStyleColor(ctx, ImGui.Col_Text, hexrgb("#94A3B8"))
@@ -134,6 +140,7 @@ local function showcase_simple_grid(ctx, state)
     bg_hover_color = hexrgb("#334155"),
     text_color = hexrgb("#F8FAFC"),
     rounding = 6,
+    tooltip = Tooltips.GRID.clear_selection,
   }, "clear_selection_btn")
 
   if clear_clicked then
@@ -209,6 +216,11 @@ local function show_code_examples(ctx)
   ImGui.Spacing(ctx)
 
   ImGui.Text(ctx, "Production Grid Usage:")
+  ImGui.SameLine(ctx, 0, 8)
+  ImGui.TextColored(ctx, hexrgb("#94A3B8"), "(?)")
+  if ImGui.IsItemHovered(ctx) then
+    ImGui.SetTooltip(ctx, Tooltips.GRID.production_grid)
+  end
   ImGui.Spacing(ctx)
 
   -- Background
@@ -282,6 +294,11 @@ local function show_features(ctx)
   ImGui.Spacing(ctx)
 
   ImGui.TextColored(ctx, hexrgb("#A78BFA"), "Grid System Features")
+  ImGui.SameLine(ctx, 0, 8)
+  ImGui.TextColored(ctx, hexrgb("#94A3B8"), "(?)")
+  if ImGui.IsItemHovered(ctx) then
+    ImGui.SetTooltip(ctx, Tooltips.GRID.grid_features)
+  end
   ImGui.Spacing(ctx)
 
   local features = {

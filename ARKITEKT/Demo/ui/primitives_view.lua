@@ -21,6 +21,7 @@ local ImGui = require 'imgui' '0.10'
 local Button = require('rearkitekt.gui.widgets.primitives.button')
 local Checkbox = require('rearkitekt.gui.widgets.primitives.checkbox')
 local Colors = require('rearkitekt.core.colors')
+local Tooltips = require('Demo.ui.tooltips')
 
 local M = {}
 local hexrgb = Colors.hexrgb
@@ -103,7 +104,7 @@ local function showcase_buttons(ctx, state)
   local btn_clicked = Button.draw_at_cursor(ctx, {
     label = "Click Me! (" .. state.primitives.button_click_count .. ")",
     height = 32,
-    tooltip = "This is a tooltip!",
+    tooltip = Tooltips.PRIMITIVES.button_basic,
   }, "demo_btn_1")
 
   if btn_clicked then
@@ -115,6 +116,11 @@ local function showcase_buttons(ctx, state)
 
   -- Example 2: Colored Buttons
   ImGui.Text(ctx, "Buttons with custom colors:")
+  ImGui.SameLine(ctx, 0, 8)
+  ImGui.TextColored(ctx, hexrgb("#94A3B8"), "(?)")
+  if ImGui.IsItemHovered(ctx) then
+    ImGui.SetTooltip(ctx, Tooltips.PRIMITIVES.button_colored)
+  end
   ImGui.Spacing(ctx)
 
   cursor_x, cursor_y = ImGui.GetCursorScreenPos(ctx)
@@ -152,6 +158,11 @@ local function showcase_buttons(ctx, state)
 
   -- Code example
   ImGui.Text(ctx, "Usage:")
+  ImGui.SameLine(ctx, 0, 8)
+  ImGui.TextColored(ctx, hexrgb("#94A3B8"), "(?)")
+  if ImGui.IsItemHovered(ctx) then
+    ImGui.SetTooltip(ctx, Tooltips.CODE.button_example)
+  end
   draw_code_snippet(ctx, [[
 local Button = require('rearkitekt.gui.widgets.primitives.button')
 
@@ -179,6 +190,11 @@ local function showcase_checkboxes(ctx, state)
 
   -- Basic checkbox
   ImGui.Text(ctx, "Basic checkbox:")
+  ImGui.SameLine(ctx, 0, 8)
+  ImGui.TextColored(ctx, hexrgb("#94A3B8"), "(?)")
+  if ImGui.IsItemHovered(ctx) then
+    ImGui.SetTooltip(ctx, Tooltips.PRIMITIVES.checkbox_basic)
+  end
   ImGui.Spacing(ctx)
 
   local cb_changed, cb_value = Checkbox.draw_at_cursor(ctx, {
@@ -197,6 +213,11 @@ local function showcase_checkboxes(ctx, state)
 
   -- Code example
   ImGui.Text(ctx, "Usage:")
+  ImGui.SameLine(ctx, 0, 8)
+  ImGui.TextColored(ctx, hexrgb("#94A3B8"), "(?)")
+  if ImGui.IsItemHovered(ctx) then
+    ImGui.SetTooltip(ctx, Tooltips.CODE.checkbox_example)
+  end
   draw_code_snippet(ctx, [[
 local Checkbox = require('rearkitekt.gui.widgets.primitives.checkbox')
 
@@ -225,6 +246,11 @@ local function showcase_text(ctx, state)
 
   -- Different text colors
   ImGui.Text(ctx, "Colored text:")
+  ImGui.SameLine(ctx, 0, 8)
+  ImGui.TextColored(ctx, hexrgb("#94A3B8"), "(?)")
+  if ImGui.IsItemHovered(ctx) then
+    ImGui.SetTooltip(ctx, Tooltips.PRIMITIVES.text_colored)
+  end
   ImGui.Spacing(ctx)
 
   ImGui.TextColored(ctx, hexrgb("#EF4444"), "• Red text (errors, warnings)")
@@ -238,6 +264,11 @@ local function showcase_text(ctx, state)
 
   -- Wrapped text
   ImGui.Text(ctx, "Text wrapping:")
+  ImGui.SameLine(ctx, 0, 8)
+  ImGui.TextColored(ctx, hexrgb("#94A3B8"), "(?)")
+  if ImGui.IsItemHovered(ctx) then
+    ImGui.SetTooltip(ctx, Tooltips.PRIMITIVES.text_wrapped)
+  end
   ImGui.Spacing(ctx)
 
   ImGui.PushStyleColor(ctx, ImGui.Col_Text, hexrgb("#94A3B8"))
@@ -251,6 +282,11 @@ local function showcase_text(ctx, state)
 
   -- Code example
   ImGui.Text(ctx, "Usage:")
+  ImGui.SameLine(ctx, 0, 8)
+  ImGui.TextColored(ctx, hexrgb("#94A3B8"), "(?)")
+  if ImGui.IsItemHovered(ctx) then
+    ImGui.SetTooltip(ctx, Tooltips.CODE.text_example)
+  end
   draw_code_snippet(ctx, [[
 -- Simple text
 ImGui.Text(ctx, "Hello World")
@@ -282,6 +318,11 @@ local function showcase_drawing_primitives(ctx, state)
   local cursor_x, cursor_y = ImGui.GetCursorScreenPos(ctx)
 
   ImGui.Text(ctx, "Basic shapes:")
+  ImGui.SameLine(ctx, 0, 8)
+  ImGui.TextColored(ctx, hexrgb("#94A3B8"), "(?)")
+  if ImGui.IsItemHovered(ctx) then
+    ImGui.SetTooltip(ctx, Tooltips.PRIMITIVES.drawing_primitives)
+  end
   ImGui.Spacing(ctx)
 
   cursor_x, cursor_y = ImGui.GetCursorScreenPos(ctx)
@@ -340,6 +381,11 @@ local function showcase_drawing_primitives(ctx, state)
 
   -- Code example
   ImGui.Text(ctx, "Usage:")
+  ImGui.SameLine(ctx, 0, 8)
+  ImGui.TextColored(ctx, hexrgb("#94A3B8"), "(?)")
+  if ImGui.IsItemHovered(ctx) then
+    ImGui.SetTooltip(ctx, Tooltips.CODE.drawing_example)
+  end
   draw_code_snippet(ctx, [[
 local dl = ImGui.GetWindowDrawList(ctx)
 local Colors = require('rearkitekt.core.colors')
@@ -394,6 +440,11 @@ local function showcase_color_utilities(ctx, state)
   local cursor_x, cursor_y = ImGui.GetCursorScreenPos(ctx)
 
   ImGui.Text(ctx, "Base color:")
+  ImGui.SameLine(ctx, 0, 8)
+  ImGui.TextColored(ctx, hexrgb("#94A3B8"), "(?)")
+  if ImGui.IsItemHovered(ctx) then
+    ImGui.SetTooltip(ctx, Tooltips.PRIMITIVES.color_utilities)
+  end
   local base_color = state.primitives.color_value
 
   -- Show base color
@@ -471,6 +522,11 @@ local function showcase_color_utilities(ctx, state)
 
   -- Code example
   ImGui.Text(ctx, "Usage:")
+  ImGui.SameLine(ctx, 0, 8)
+  ImGui.TextColored(ctx, hexrgb("#94A3B8"), "(?)")
+  if ImGui.IsItemHovered(ctx) then
+    ImGui.SetTooltip(ctx, Tooltips.CODE.color_example)
+  end
   draw_code_snippet(ctx, [[
 local Colors = require('rearkitekt.core.colors')
 
