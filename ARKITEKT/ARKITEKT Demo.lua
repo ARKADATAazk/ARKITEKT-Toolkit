@@ -62,6 +62,9 @@ local ImGui = ARK.ImGui
 -- Framework modules
 local Shell = require("rearkitekt.app.runtime.shell")
 
+-- Load ARKITEKT style (provides default ImGui styling)
+local style_ok, Style = pcall(require, "rearkitekt.gui.style.imgui_defaults")
+
 -- Demo modules
 local State = require("Demo.core.state")
 local MainGUI = require("Demo.ui.main_gui")
@@ -77,18 +80,18 @@ local MainGUI = require("Demo.ui.main_gui")
 local state = State.initialize()
 
 -- ============================================================================
--- MAIN RENDER FUNCTION
+-- MAIN DRAW FUNCTION
 -- ============================================================================
 --
 -- WHY THIS PATTERN:
--- The render function is called every frame by the Shell.
+-- The draw function is called every frame by the Shell.
 -- We receive the ImGui context and need to draw our entire UI.
--- The Shell handles window management, we just draw content.
+-- The Shell handles window management, styling, fonts - we just draw content.
 --
 -- @param ctx ImGui context
--- @param app_state table Application state managed by Shell
+-- @param app_state table Application state managed by Shell (fonts, style, etc.)
 
-local function render(ctx, app_state)
+local function draw(ctx, app_state)
   -- Get available space
   local avail_w, avail_h = ImGui.GetContentRegionAvail(ctx)
 
@@ -104,21 +107,24 @@ end
 -- Shell.run() is ARKITEKT's application runner. It:
 -- - Creates and manages the ImGui window
 -- - Handles the defer loop for continuous rendering
--- - Manages fonts and styling
+-- - Manages fonts and styling (via style parameter)
 -- - Provides window chrome (titlebar, etc.)
 -- - Handles visibility toggling (run script again to hide)
 --
 -- Configuration options:
 -- - title: Window title in REAPER
--- - width/height: Initial window size
--- - render: Your render function called every frame
+-- - initial_size: Initial window size {w, h}
+-- - draw: Your draw function called every frame (NOT render!)
+-- - style: Style module for ImGui colors/styling (CRITICAL!)
 -- - fonts: Custom font configuration (optional)
 
 Shell.run({
   title = "ARKITEKT Demo",
   version = "1.0.0",
-  width = 900,
-  height = 700,
+
+  -- Initial window size
+  initial_size = { w = 900, h = 700 },
+  min_size = { w = 700, h = 500 },
 
   -- Custom font sizes (optional)
   fonts = {
@@ -127,11 +133,11 @@ Shell.run({
     version = 11,
   },
 
-  -- Main render function
-  render = render,
+  -- Main draw function (NOT render!)
+  draw = draw,
 
-  -- Optional: Window flags
-  window_flags = 0, -- Use default flags
+  -- CRITICAL: Pass the style to get ARKITEKT colors/styling
+  style = style_ok and Style or nil,
 
   -- Optional: Show icon in titlebar
   show_icon = true,
