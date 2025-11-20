@@ -20,7 +20,6 @@ local ImGui = require 'imgui' '0.10'
 -- ARKITEKT dependencies
 local Button = require('rearkitekt.gui.widgets.primitives.button')
 local Checkbox = require('rearkitekt.gui.widgets.primitives.checkbox')
-local Separator = require('rearkitekt.gui.widgets.primitives.separator')
 local Colors = require('rearkitekt.core.colors')
 
 local M = {}
@@ -163,7 +162,7 @@ local clicked = Button.draw_at_cursor(ctx, {
   on_click = function() print("Clicked!") end
 }, "unique_button_id")]])
 
-  Separator.draw(ctx, { margin = 16 })
+  ImGui.Separator(ctx)
 end
 
 -- ============================================================================
@@ -209,7 +208,7 @@ if changed then
   current_state = new_value
 end]])
 
-  Separator.draw(ctx, { margin = 16 })
+  ImGui.Separator(ctx)
 end
 
 -- ============================================================================
@@ -264,7 +263,7 @@ ImGui.PushTextWrapPos(ctx, ImGui.GetCursorPosX(ctx) + max_width)
 ImGui.TextWrapped(ctx, "Long text that will wrap...")
 ImGui.PopTextWrapPos(ctx)]])
 
-  Separator.draw(ctx, { margin = 16 })
+  ImGui.Separator(ctx)
 end
 
 -- ============================================================================
@@ -376,7 +375,7 @@ ImGui.DrawList_AddLine(
   3                    -- Thickness
 )]])
 
-  Separator.draw(ctx, { margin = 16 })
+  ImGui.Separator(ctx)
 end
 
 -- ============================================================================
@@ -491,7 +490,7 @@ local semi_transparent = Colors.with_alpha(color, 128)
 -- Lerp between colors
 local mixed = Colors.lerp(color1, color2, 0.5)]])
 
-  Separator.draw(ctx, { margin = 16 })
+  ImGui.Separator(ctx)
 end
 
 -- ============================================================================
@@ -513,7 +512,7 @@ function M.render(ctx, state)
 
   ImGui.Spacing(ctx)
   ImGui.Spacing(ctx)
-  Separator.draw(ctx, { margin = 8 })
+  ImGui.Separator(ctx)
   ImGui.Spacing(ctx)
 
   -- Showcases

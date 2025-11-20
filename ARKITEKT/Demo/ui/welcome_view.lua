@@ -10,7 +10,6 @@ package.path = reaper.ImGui_GetBuiltinPath() .. '/?.lua;' .. package.path
 local ImGui = require 'imgui' '0.10'
 
 local Colors = require('rearkitekt.core.colors')
-local Separator = require('rearkitekt.gui.widgets.primitives.separator')
 
 local M = {}
 local hexrgb = Colors.hexrgb
@@ -59,7 +58,7 @@ function M.render(ctx, state)
   ImGui.Spacing(ctx)
   ImGui.Spacing(ctx)
 
-  Separator.draw(ctx, { margin = 16 })
+  ImGui.Separator(ctx)
   ImGui.Spacing(ctx)
   ImGui.Spacing(ctx)
 
@@ -136,7 +135,7 @@ function M.render(ctx, state)
   end
 
   ImGui.Spacing(ctx)
-  Separator.draw(ctx, { margin = 16 })
+  ImGui.Separator(ctx)
   ImGui.Spacing(ctx)
   ImGui.Spacing(ctx)
 
@@ -153,7 +152,7 @@ function M.render(ctx, state)
 
   ImGui.Spacing(ctx)
   ImGui.Spacing(ctx)
-  Separator.draw(ctx, { margin = 16 })
+  ImGui.Separator(ctx)
   ImGui.Spacing(ctx)
   ImGui.Spacing(ctx)
 

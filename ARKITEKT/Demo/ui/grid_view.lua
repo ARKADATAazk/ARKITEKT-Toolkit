@@ -19,7 +19,6 @@ local ImGui = require 'imgui' '0.10'
 
 -- ARKITEKT dependencies
 local Colors = require('rearkitekt.core.colors')
-local Separator = require('rearkitekt.gui.widgets.primitives.separator')
 local Button = require('rearkitekt.gui.widgets.primitives.button')
 local State = require('Demo.core.state')
 
@@ -206,7 +205,7 @@ end
 local function show_code_examples(ctx)
   ImGui.Spacing(ctx)
   ImGui.Spacing(ctx)
-  Separator.draw(ctx, { margin = 16 })
+  ImGui.Separator(ctx)
   ImGui.Spacing(ctx)
 
   ImGui.Text(ctx, "Production Grid Usage:")
@@ -279,7 +278,7 @@ end
 local function show_features(ctx)
   ImGui.Spacing(ctx)
   ImGui.Spacing(ctx)
-  Separator.draw(ctx, { margin = 16 })
+  ImGui.Separator(ctx)
   ImGui.Spacing(ctx)
 
   ImGui.TextColored(ctx, hexrgb("#A78BFA"), "Grid System Features")
@@ -323,7 +322,7 @@ function M.render(ctx, state)
 
   ImGui.Spacing(ctx)
   ImGui.Spacing(ctx)
-  Separator.draw(ctx, { margin = 8 })
+  ImGui.Separator(ctx)
   ImGui.Spacing(ctx)
 
   -- Grid demo
