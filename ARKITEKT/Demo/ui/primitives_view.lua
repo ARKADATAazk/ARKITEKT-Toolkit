@@ -197,13 +197,16 @@ local function showcase_checkboxes(ctx, state)
   end
   ImGui.Spacing(ctx)
 
-  local cb_changed, cb_value = Checkbox.draw_at_cursor(ctx, {
-    label = "Enable feature",
-    checked = state.primitives.checkbox_state,
-  }, "demo_cb_1")
+  local cb_clicked = Checkbox.draw_at_cursor(
+    ctx,
+    "Enable feature",
+    state.primitives.checkbox_state,
+    {},
+    "demo_cb_1"
+  )
 
-  if cb_changed then
-    state.primitives.checkbox_state = cb_value
+  if cb_clicked then
+    state.primitives.checkbox_state = not state.primitives.checkbox_state
   end
 
   ImGui.Text(ctx, "State: " .. (state.primitives.checkbox_state and "Checked" or "Unchecked"))
@@ -221,13 +224,16 @@ local function showcase_checkboxes(ctx, state)
   draw_code_snippet(ctx, [[
 local Checkbox = require('rearkitekt.gui.widgets.primitives.checkbox')
 
-local changed, new_value = Checkbox.draw_at_cursor(ctx, {
-  label = "Enable feature",
-  checked = current_state,
-}, "checkbox_id")
+local clicked = Checkbox.draw_at_cursor(
+  ctx,
+  "Enable feature",    -- label
+  current_state,       -- is_checked
+  {},                  -- config (optional)
+  "checkbox_id"        -- unique id
+)
 
-if changed then
-  current_state = new_value
+if clicked then
+  current_state = not current_state
 end]])
 
   ImGui.Separator(ctx)
