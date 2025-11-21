@@ -56,30 +56,36 @@ function M.load_group_preset_config(group, view)
     end
   end
 
-  -- Load existing presets from first template (if any)
+  -- Load existing presets from group (stored by apply_group_config)
   local presets = {}
-  local first_template_id = group.template_ids and group.template_ids[1]
-  if first_template_id then
-    local first_template = view.templates[first_template_id]
-    if first_template and first_template.config and first_template.config.presets then
-      -- Convert old format to new format if needed
-      for _, preset in ipairs(first_template.config.presets) do
-        local new_preset = {
-          label = preset.label or "Unnamed",
-          values = {}
-        }
+  if group.presets then
+    -- Group has full preset configuration saved
+    presets = group.presets
+  else
+    -- Fallback: try loading from first template (backward compatibility)
+    local first_template_id = group.template_ids and group.template_ids[1]
+    if first_template_id then
+      local first_template = view.templates[first_template_id]
+      if first_template and first_template.config and first_template.config.presets then
+        -- Convert old format to new format if needed
+        for _, preset in ipairs(first_template.config.presets) do
+          local new_preset = {
+            label = preset.label or "Unnamed",
+            values = {}
+          }
 
-        -- If old format (single value), apply to all params
-        if preset.value then
-          for _, param_name in ipairs(param_order) do
-            new_preset.values[param_name] = preset.value
+          -- If old format (single value), apply to all params
+          if preset.value then
+            for _, param_name in ipairs(param_order) do
+              new_preset.values[param_name] = preset.value
+            end
+          else
+            -- New format already
+            new_preset.values = preset.values or {}
           end
-        else
-          -- New format already
-          new_preset.values = preset.values or {}
-        end
 
-        table.insert(presets, new_preset)
+          table.insert(presets, new_preset)
+        end
       end
     end
   end
@@ -379,7 +385,11 @@ function M.apply_group_config(group, state, view)
   group.name = state.name
   group.color = state.color
 
-  -- Apply configuration to all templates in the group
+  -- Store the FULL preset configuration on the group itself
+  -- This is needed for the group macro control in Additional Parameters
+  group.presets = state.preset_config.presets
+
+  -- Also apply configuration to all templates in the group (for individual template usage)
   for _, template_id in ipairs(group.template_ids or {}) do
     local template = view.templates[template_id]
     if template then

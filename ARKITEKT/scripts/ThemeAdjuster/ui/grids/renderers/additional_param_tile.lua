@@ -399,15 +399,8 @@ function M.render_group(ctx, group_param, tab_color, shell_state, view)
     return
   end
 
-  -- Get presets from the group's first template
-  local presets = nil
-  local first_template_id = group.template_ids and group.template_ids[1]
-  if first_template_id then
-    local first_template = view.templates[first_template_id]
-    if first_template and first_template.config and first_template.config.presets then
-      presets = first_template.config.presets
-    end
-  end
+  -- Get presets from the group itself (stored by apply_group_config)
+  local presets = group.presets
 
   if not presets or #presets == 0 then
     -- No presets configured
