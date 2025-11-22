@@ -271,6 +271,15 @@ function M.create(opts)
     self:_ensure_sequence()
     -- Remember which playlist we're playing when playback starts
     self._playing_playlist_id = safe_call(self.get_active_playlist_id)
+
+    -- If we're starting after a stop (not resuming from pause), force reset to beginning
+    -- This must happen AFTER _ensure_sequence() so it overrides sequence restoration
+    if not self.engine:get_is_playing() and
+       self.engine.state.current_idx == -1 and
+       self.engine.state.next_idx == -1 then
+      self.engine.state.playlist_pointer = 1
+    end
+
     return self.engine:play()
   end
 

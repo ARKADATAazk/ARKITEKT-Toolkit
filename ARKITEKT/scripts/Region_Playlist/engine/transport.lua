@@ -33,6 +33,7 @@ function M.new(opts)
   self.shuffle_enabled = false  -- Initialize to false, will be set properly below
 
   self.is_playing = false
+  self.is_paused = false  -- Track pause state separately from stopped
   self.last_seek_time = 0
   self.seek_throttle = 0.06
 
@@ -139,11 +140,8 @@ function Transport:play()
 
   self:_enter_playlist_mode_if_needed()
 
-  -- Detect pause/resume: if indices are still valid (not -1), we're resuming from pause
-  -- After stop(), current_idx = -1. After pause(), indices stay where they were.
-  local is_resuming = not _is_playing(self.proj) and
-                      not self.is_playing and
-                      (self.state.current_idx ~= -1 or self.state.next_idx ~= -1)
+  -- Detect pause/resume using is_paused flag
+  local is_resuming = self.is_paused
 
   if _is_playing(self.proj) then
     local region_num = region.rid
@@ -162,6 +160,7 @@ function Transport:play()
   end
 
   self.is_playing = true
+  self.is_paused = false  -- Clear pause state when playing
   self.state:update_bounds()
 
   return true
@@ -171,6 +170,7 @@ function Transport:pause()
   -- Pause without resetting playlist position (for resume)
   reaper.OnStopButton()
   self.is_playing = false
+  self.is_paused = true  -- Set pause flag so resume detection works
   -- Don't reset current_idx, next_idx, or playlist_pointer - keep for resume
   -- Don't leave playlist mode - we might resume
 end
@@ -178,6 +178,7 @@ end
 function Transport:stop()
   reaper.OnStopButton()
   self.is_playing = false
+  self.is_paused = false  -- Clear pause flag
   self.state.current_idx = -1
   self.state.next_idx = -1
   self.state.playlist_pointer = 1  -- Reset to beginning for next play
@@ -336,11 +337,14 @@ function Transport:check_stopped()
   if not _is_playing(self.proj) then
     if self.is_playing then
       self.is_playing = false
-      self.state.current_idx = -1
-      self.state.next_idx = -1
-      -- Don't reset playlist_pointer here - user might be pausing to resume later
-      -- Only reset when user explicitly presses Stop button
-      self:_leave_playlist_mode_if_needed()
+      -- Only reset indices if we're NOT paused (external stop, not our pause button)
+      if not self.is_paused then
+        self.state.current_idx = -1
+        self.state.next_idx = -1
+        -- Don't reset playlist_pointer here - user might be pausing to resume later
+        -- Only reset when user explicitly presses Stop button
+        self:_leave_playlist_mode_if_needed()
+      end
       return true
     end
   end
