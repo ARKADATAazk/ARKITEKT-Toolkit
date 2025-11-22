@@ -6,7 +6,7 @@
 -- ADDED: Support for show_icon option to disable titlebar icon
 -- UPDATED: ImGui 0.10 font size handling
 
-package.path = reaper.ImGui_GetBuiltinPath() .. '/?.lua;' .. package.path
+-- Note: package.path for ImGui is set up in bootstrap.lua
 local ImGui   = require 'imgui' '0.10'
 local Config = require('rearkitekt.core.config')
 local Constants = require('rearkitekt.defs.app')

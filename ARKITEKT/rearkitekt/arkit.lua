@@ -42,7 +42,9 @@ function M.clamp(val, min, max)
 end
 
 function M.remap(value, in_min, in_max, out_min, out_max)
-  return out_min + (value - in_min) * (out_max - out_min) / (in_max - in_min)
+  local range = in_max - in_min
+  if range == 0 then return out_min end
+  return out_min + (value - in_min) * (out_max - out_min) / range
 end
 
 function M.snap(value, step)
@@ -69,7 +71,7 @@ function M.centered_text(ctx, text, x1, y1, x2, y2, color)
   local tw, th = M.ImGui.CalcTextSize(ctx, text)
   local cx = x1 + math.floor((x2 - x1 - tw) * 0.5)
   local cy = y1 + math.floor((y2 - y1 - th) * 0.5)
-  M.ImGui.DrawList_AddText(dl, cx, cy, color or hexrgb("#FFFFFF"), text)
+  M.ImGui.DrawList_AddText(dl, cx, cy, color or M.hexrgb("#FFFFFF"), text)
 end
 
 -- Draw a crisp rectangle (pixel-aligned)

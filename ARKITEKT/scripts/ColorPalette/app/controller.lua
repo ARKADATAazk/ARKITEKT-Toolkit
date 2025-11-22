@@ -194,44 +194,71 @@ function Controller:generate_random_colors(count, base_colors)
   return colors
 end
 
-function Controller:apply_color(color, target_type, action_type, set_children)
-  -- Debug output
-  reaper.ShowConsoleMsg("Target Type: " .. target_type .. "\n")
-  reaper.ShowConsoleMsg("Action Type: " .. action_type .. "\n")
-  
+-- Convert RGBA color to REAPER's native BGR format
+local function rgba_to_native(color)
+  local r = (color >> 24) & 0xFF
+  local g = (color >> 16) & 0xFF
+  local b = (color >> 8) & 0xFF
+  return 0x01000000 | (b << 16) | (g << 8) | r
+end
+
+function Controller:apply_color(color, target_type, action_type, set_children, palette_colors)
   local targets = self:get_selected_targets(target_type)
-  
-  reaper.ShowConsoleMsg("Targets found: " .. #targets .. "\n")
-  
+
   if #targets == 0 then
     reaper.ShowMessageBox("No " .. target_type .. " selected", "Color Palette", 0)
     return
   end
-  
+
   -- Convert RGBA to REAPER's BGR format
-  local r = (color >> 24) & 0xFF
-  local g = (color >> 16) & 0xFF
-  local b = (color >> 8) & 0xFF
-  local native_color = 0x01000000 | (b << 16) | (g << 8) | r
-  
+  local native_color = rgba_to_native(color)
+
   if action_type == "Default" then
     self:apply_color_to_targets(targets, 0, target_type, set_children)
-    
+
   elseif action_type == "Random All" then
     -- All targets get the same random color (the clicked one)
     self:apply_color_to_targets(targets, native_color, target_type, set_children)
-    
+
   elseif action_type == "Random Each" then
     -- Each target gets a random color from palette
-    -- For now, just apply the clicked color to all
-    -- TODO: Implement proper random-each logic with palette colors
-    self:apply_color_to_targets(targets, native_color, target_type, set_children)
-    
+    if palette_colors and #palette_colors > 0 then
+      reaper.Undo_BeginBlock()
+      reaper.PreventUIRefresh(1)
+
+      for i, target in ipairs(targets) do
+        local random_idx = math.random(1, #palette_colors)
+        local random_native = rgba_to_native(palette_colors[random_idx])
+        self:apply_color_to_targets({target}, random_native, target_type, set_children)
+      end
+
+      reaper.PreventUIRefresh(-1)
+      reaper.UpdateArrange()
+      reaper.Undo_EndBlock("Color Palette: Random Each " .. target_type, -1)
+    else
+      -- Fallback: apply clicked color to all
+      self:apply_color_to_targets(targets, native_color, target_type, set_children)
+    end
+
   elseif action_type == "In Order" then
-    -- Apply colors in order from palette
-    -- For now, just apply the clicked color to all
-    -- TODO: Implement proper in-order logic with palette colors
-    self:apply_color_to_targets(targets, native_color, target_type, set_children)
+    -- Apply colors in order from palette (cycling if needed)
+    if palette_colors and #palette_colors > 0 then
+      reaper.Undo_BeginBlock()
+      reaper.PreventUIRefresh(1)
+
+      for i, target in ipairs(targets) do
+        local color_idx = ((i - 1) % #palette_colors) + 1
+        local ordered_native = rgba_to_native(palette_colors[color_idx])
+        self:apply_color_to_targets({target}, ordered_native, target_type, set_children)
+      end
+
+      reaper.PreventUIRefresh(-1)
+      reaper.UpdateArrange()
+      reaper.Undo_EndBlock("Color Palette: In Order " .. target_type, -1)
+    else
+      -- Fallback: apply clicked color to all
+      self:apply_color_to_targets(targets, native_color, target_type, set_children)
+    end
   end
 end
 

@@ -90,6 +90,11 @@ M.WINDOW = {
         close_on_background_click = true,
         close_on_background_left_click = false,
     },
+
+    -- Fallback monitor dimensions (used when JS_Window_GetViewportFromRect unavailable)
+    fallback_monitor_width = 1920,
+    fallback_monitor_height = 1080,
+    fallback_taskbar_offset = 40,
 }
 
 -- ============================================================================

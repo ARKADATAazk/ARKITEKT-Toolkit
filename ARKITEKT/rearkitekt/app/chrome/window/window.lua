@@ -325,9 +325,6 @@ function M.new(opts)
 
   do
     local ok, OverlayManager = pcall(require, 'rearkitekt.gui.widgets.overlays.overlay.manager')
-local Colors = require('rearkitekt.core.colors')
-local hexrgb = Colors.hexrgb
-
     if ok and OverlayManager and OverlayManager.new then
       win.overlay = OverlayManager.new()
     end
@@ -432,18 +429,18 @@ local hexrgb = Colors.hexrgb
       end
       
       if not js_success then
-        local monitor_width = 1920
-        local monitor_height = 1080
-        local taskbar_offset = 40
+        local monitor_width = Constants.WINDOW.fallback_monitor_width
+        local monitor_height = Constants.WINDOW.fallback_monitor_height
+        local taskbar_offset = Constants.WINDOW.fallback_taskbar_offset
         local monitor_index = math.floor((self._pre_max_pos.x + monitor_width / 2) / monitor_width)
         local monitor_left = monitor_index * monitor_width
         local monitor_top = 0
-        
-        self._max_viewport = { 
-          x = monitor_left, 
+
+        self._max_viewport = {
+          x = monitor_left,
           y = monitor_top,
-          w = monitor_width, 
-          h = monitor_height - taskbar_offset 
+          w = monitor_width,
+          h = monitor_height - taskbar_offset
         }
       end
       
