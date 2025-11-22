@@ -103,22 +103,39 @@ end
 function M.draw_simple_a(ctx, x, y, size, color)
   local draw_list = ImGui.GetWindowDrawList(ctx)
   local dpi = ImGui.GetWindowDpiScale(ctx)
-  
+
   local s = size * dpi
   local cx, cy = x + s * 0.5, y + s * 0.5
-  
+
   -- Triangle "A"
   local top_x, top_y = cx, cy - s * 0.4
   local left_x, left_y = cx - s * 0.35, cy + s * 0.4
   local right_x, right_y = cx + s * 0.35, cy + s * 0.4
-  
+
   local thickness = math.max(2.0 * dpi, 1.5)
   ImGui.DrawList_AddLine(draw_list, top_x, top_y, left_x, left_y, color, thickness)
   ImGui.DrawList_AddLine(draw_list, top_x, top_y, right_x, right_y, color, thickness)
-  
+
   -- Crossbar
   local bar_y = cy + s * 0.1
   ImGui.DrawList_AddLine(draw_list, cx - s * 0.25, bar_y, cx + s * 0.25, bar_y, color, thickness)
+end
+
+-- Arkitekt Default Logo (SVG-converted)
+-- Auto-generated from AArkitekt_default.svg
+-- Re-run Utils/Python/svg_to_lua.py to update this function
+function M.draw_arkitekt_default(ctx, x, y, size, color)
+  local dl = ImGui.GetWindowDrawList(ctx)
+  local dpi = ImGui.GetWindowDpiScale(ctx)
+  local s = size * dpi
+
+  -- TODO: Paste converted SVG paths here after running:
+  -- python Utils/Python/svg_to_lua.py --batch
+  -- The converter has been fixed to properly normalize out-of-viewbox content
+
+  -- Fallback: draw a simple placeholder
+  local cx, cy = x + s * 0.5, y + s * 0.5
+  ImGui.DrawList_AddCircleFilled(dl, cx, cy, s * 0.35, color)
 end
 
 return M

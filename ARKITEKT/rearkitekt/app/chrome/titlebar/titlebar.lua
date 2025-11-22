@@ -120,6 +120,8 @@ function M.new(opts)
   function titlebar:_draw_icon(ctx, x, y, color)
     if self.icon_draw then
       self.icon_draw(ctx, x, y, self.icon_size, color)
+    elseif Icon and Icon.draw_arkitekt_default then
+      Icon.draw_arkitekt_default(ctx, x, y, self.icon_size, color)
     elseif Icon and Icon.draw_rearkitekt then
       Icon.draw_rearkitekt(ctx, x, y, self.icon_size, color)
     else
