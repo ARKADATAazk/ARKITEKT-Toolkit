@@ -8,12 +8,11 @@
 
 package.path = reaper.ImGui_GetBuiltinPath() .. '/?.lua;' .. package.path
 local ImGui = require 'imgui' '0.10'
-local ark = require('arkitekt')
-local Config = ark.Config
-local Constants = ark.AppDefs
-local Typography = ark.Typography
-local Fonts = ark.Fonts
-local Window = ark.Window
+local Config = require('arkitekt.core.config')
+local Constants = require('arkitekt.defs.app')
+local Typography = require('arkitekt.defs.typography')
+local Fonts = require('arkitekt.app.assets.fonts')
+local Window = require('arkitekt.app.chrome.window.window')
 
 local M = {}
 

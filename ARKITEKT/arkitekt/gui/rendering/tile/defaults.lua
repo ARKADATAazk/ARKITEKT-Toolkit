@@ -2,9 +2,8 @@
 -- ReArkitekt/gui/fx/tile_fx_config.lua
 -- Granular tile visual configuration
 
-local ark = require('arkitekt')
-local Colors = ark.Colors
-local hexrgb = ark.hexrgb
+local Colors = require('arkitekt.core.colors')
+local hexrgb = Colors.hexrgb
 
 local M = {}
 

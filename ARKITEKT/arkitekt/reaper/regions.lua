@@ -2,9 +2,8 @@
 -- ReArkitekt/reaper/regions.lua
 -- REAPER Region API wrapper - uses native markrgnindexnumber as stable RID
 
-local ark = require('arkitekt')
-local Colors = ark.Colors
-local hexrgb = ark.hexrgb
+local Colors = require('arkitekt.core.colors')
+local hexrgb = Colors.hexrgb
 
 local M = {}
 

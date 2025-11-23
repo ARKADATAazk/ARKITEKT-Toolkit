@@ -4,13 +4,12 @@
 
 package.path = reaper.ImGui_GetBuiltinPath() .. '/?.lua;' .. package.path
 local ImGui = require 'imgui' '0.10'
-local ark = require('arkitekt')
-local Logger = ark.Logger
-local Panel = ark.Panel
-local Config = ark.PanelDefaults
-local ColoredTextView = ark.ColoredTextView
-local Colors = ark.Colors
-local hexrgb = ark.hexrgb
+local Logger = require('arkitekt.debug.logger')
+local Panel = require('arkitekt.gui.widgets.containers.panel')
+local Config = require('arkitekt.gui.widgets.containers.panel.defaults')
+local ColoredTextView = require('arkitekt.gui.widgets.text.colored_text_view')
+local Colors = require('arkitekt.core.colors')
+local hexrgb = Colors.hexrgb
 
 
 local M = {}
@@ -18,7 +17,7 @@ local M = {}
 local function hexrgb(hex)
   if hex:sub(1, 1) == "#" then hex = hex:sub(2) end
   local h = tonumber(hex, 16)
-  if not h then return hexrgb("#FFFFFF") end
+  if not h then return Colors.hexrgb("#FFFFFF") end
   return (#hex == 8) and h or ((h << 8) | 0xFF)
 end
 

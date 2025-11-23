@@ -5,11 +5,10 @@
 
 package.path = reaper.ImGui_GetBuiltinPath() .. '/?.lua;' .. package.path
 local ImGui = require 'imgui' '0.10'
-local ark = require('arkitekt')
-local Draw = ark.Draw
-local Colors = ark.Colors
-local ColorDefs = ark.ColorDefs
-local hexrgb = ark.hexrgb
+local Draw = require('arkitekt.gui.draw')
+local Colors = require('arkitekt.core.colors')
+local ColorDefs = require('arkitekt.defs.colors')
+local hexrgb = Colors.hexrgb
 
 -- Cache math functions for performance
 local sin, min, max = math.sin, math.min, math.max

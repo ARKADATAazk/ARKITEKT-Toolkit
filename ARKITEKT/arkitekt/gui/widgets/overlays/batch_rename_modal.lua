@@ -4,19 +4,18 @@
 
 package.path = reaper.ImGui_GetBuiltinPath() .. '/?.lua;' .. package.path
 local ImGui = require 'imgui' '0.10'
-local ark = require('arkitekt')
-local Colors = ark.Colors
-local Style = ark.Style
-local Container = ark.OverlayContainer
-local ColorPickerWindow = ark.ColorPickerWindow
-local Button = ark.Button
-local SearchInput = ark.SearchInput
-local Dropdown = ark.Dropdown
-local ContextMenu = ark.ContextMenu
-local Chip = ark.Chip
-local RadioButton = ark.RadioButton
-local Utf8 = ark.Utf8
-local hexrgb = ark.hexrgb
+local Colors = require('arkitekt.core.colors')
+local Style = require('arkitekt.gui.style.defaults')
+local Container = require('arkitekt.gui.widgets.overlays.overlay.container')
+local ColorPickerWindow = require('arkitekt.gui.widgets.tools.color_picker_window')
+local Button = require('arkitekt.gui.widgets.primitives.button')
+local SearchInput = require('arkitekt.gui.widgets.inputs.search_input')
+local Dropdown = require('arkitekt.gui.widgets.inputs.dropdown')
+local ContextMenu = require('arkitekt.gui.widgets.overlays.context_menu')
+local Chip = require('arkitekt.gui.widgets.data.chip')
+local RadioButton = require('arkitekt.gui.widgets.primitives.radio_button')
+local Utf8 = require('arkitekt.core.utf8')
+local hexrgb = Colors.hexrgb
 
 local M = {}
 
