@@ -197,8 +197,8 @@ function LayoutView:draw_vertical(ctx, region_tiles, display_playlist, pool_data
   local success, error_msg = pcall(function()
     if ImGui.BeginChild(ctx, "##left_column", active_width, safe_content_h, ImGui.ChildFlags_None, 0) then
       region_tiles:draw_active(ctx, display_playlist, safe_content_h, shell_state)
+      ImGui.EndChild(ctx)
     end
-    ImGui.EndChild(ctx)
   end)
 
   ImGui.PopStyleVar(ctx)
@@ -236,8 +236,8 @@ function LayoutView:draw_vertical(ctx, region_tiles, display_playlist, pool_data
   local success, error_msg = pcall(function()
     if ImGui.BeginChild(ctx, "##right_column", pool_width, safe_content_h, ImGui.ChildFlags_None, 0) then
       region_tiles:draw_pool(ctx, pool_data, safe_content_h, shell_state)
+      ImGui.EndChild(ctx)
     end
-    ImGui.EndChild(ctx)
   end)
 
   ImGui.PopStyleVar(ctx)
