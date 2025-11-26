@@ -269,7 +269,7 @@ function M.int(ctx, opts)
   opts.format = opts.format or "%.0f"
 
   local result = M.draw(ctx, opts)
-  result.value = math.floor(result.value + 0.5)  -- Round to integer
+  result.value = (result.value + 0.5) // 1  -- Round to integer
   return result
 end
 

@@ -10,6 +10,10 @@ local InputText = require('arkitekt.gui.widgets.primitives.inputtext')
 
 local M = {}
 
+-- Performance: Cache table functions for hot path
+local concat = table.concat
+local remove = table.remove
+
 -- ============================================================================
 -- TREE ARROW RENDERING
 -- ============================================================================
@@ -20,8 +24,8 @@ local function draw_tree_arrow(ctx, dl, x, y, is_open)
   local size = 5
 
   -- Round to whole pixels for crisp rendering
-  x = math.floor(x + 0.5)
-  y = math.floor(y + 0.5)
+  x = (x + 0.5) // 1
+  y = (y + 0.5) // 1
 
   -- Slightly darker arrow color for better visibility
   local arrow_color = Colors.hexrgb("#B0B0B0FF")
@@ -31,7 +35,7 @@ local function draw_tree_arrow(ctx, dl, x, y, is_open)
     -- Points: top-left, top-right, bottom-center
     local x1, y1 = x, y
     local x2, y2 = x + size, y
-    local x3, y3 = math.floor(x + size / 2 + 0.5), y + size  -- Round center point to whole pixel
+    local x3, y3 = (x + size / 2 + 0.5) // 1, y + size  -- Round center point to whole pixel
 
     ImGui.DrawList_AddTriangleFilled(dl, x1, y1, x2, y2, x3, y3, arrow_color)
   else
@@ -57,8 +61,8 @@ local function draw_folder_icon(ctx, dl, x, y, color)
   local tab_h = 2
 
   -- Round to whole pixels to avoid aliasing
-  x = math.floor(x + 0.5)
-  y = math.floor(y + 0.5)
+  x = (x + 0.5) // 1
+  y = (y + 0.5) // 1
 
   local icon_color = color or Colors.hexrgb("#888888")
 
@@ -78,8 +82,8 @@ local function draw_file_icon(ctx, dl, x, y, color)
   local fold_size = 3
 
   -- Round to whole pixels to avoid aliasing
-  x = math.floor(x + 0.5)
-  y = math.floor(y + 0.5)
+  x = (x + 0.5) // 1
+  y = (y + 0.5) // 1
 
   local icon_color = color or Colors.hexrgb("#888888")
 
@@ -106,8 +110,8 @@ local function draw_virtual_folder_icon(ctx, dl, x, y, color)
   local tab_h = 2
 
   -- Round to whole pixels to avoid aliasing
-  x = math.floor(x + 0.5)
-  y = math.floor(y + 0.5)
+  x = (x + 0.5) // 1
+  y = (y + 0.5) // 1
 
   local icon_color = color or Colors.hexrgb("#888888")
 
@@ -239,7 +243,7 @@ local function render_tree_node(ctx, node, config, state, depth)
       local arrow_x = item_min_x + (arrow_width / 2) - 2.5  -- Center horizontally in arrow space
       local arrow_y = item_min_y + (item_max_y - item_min_y) / 2 - 2.5  -- Center vertically
       -- Round arrow_y to whole pixel to avoid aliasing
-      arrow_y = math.floor(arrow_y + 0.5)
+      arrow_y = (arrow_y + 0.5) // 1
       draw_tree_arrow(ctx, dl, arrow_x, arrow_y, is_open)
     end
 
@@ -483,13 +487,13 @@ local function render_tree_node(ctx, node, config, state, depth)
         local selected_ids = {}
         local count = 0
         for id, _ in pairs(state.selected_nodes) do
-          table.insert(selected_ids, id)
           count = count + 1
+          selected_ids[count] = id
         end
 
         if is_node_selected and count > 1 then
           -- Encode multiple node IDs (newline-separated)
-          drag_payload = table.concat(selected_ids, "\n")
+          drag_payload = concat(selected_ids, "\n")
           drag_label = "Move: " .. count .. " folders"
         end
       end
@@ -539,7 +543,7 @@ local function build_flat_node_list(nodes, flat_list)
   for _, node in ipairs(nodes) do
     _node_counter = _node_counter + 1
     local node_id = node.id or node.path or tostring(_node_counter)
-    table.insert(flat_list, node_id)
+    flat_list[#flat_list + 1] = node_id
     if node.children and #node.children > 0 then
       build_flat_node_list(node.children, flat_list)
     end
@@ -660,11 +664,11 @@ function M.expand_to_node(nodes, node_id, state)
         return true
       end
       if node.children then
-        table.insert(path, id)
+        path[#path + 1] = id
         if find_path(node.children, target_id, path) then
           return true
         end
-        table.remove(path)
+        remove(path)
       end
     end
     return false

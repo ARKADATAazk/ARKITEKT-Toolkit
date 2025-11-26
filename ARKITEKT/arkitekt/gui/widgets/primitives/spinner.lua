@@ -69,24 +69,24 @@ local DEFAULTS = {
 -- ============================================================================
 
 local function draw_arrow(dl, x, y, w, h, color, direction)
-  local cx = math.floor(x + w / 2 + 0.5)
-  local cy = math.floor(y + h / 2 + 0.5)
-  local size = math.floor(math.min(w, h) * 0.35 + 0.5)
+  local cx = (x + w / 2 + 0.5) // 1
+  local cy = (y + h / 2 + 0.5) // 1
+  local size = (math.min(w, h) * 0.35 + 0.5) // 1
 
   if direction == "left" then
-    local x1 = math.floor(cx + size * 0.4 + 0.5)
-    local y1 = math.floor(cy - size * 0.6 + 0.5)
-    local x2 = math.floor(cx + size * 0.4 + 0.5)
-    local y2 = math.floor(cy + size * 0.6 + 0.5)
-    local x3 = math.floor(cx - size * 0.6 + 0.5)
+    local x1 = (cx + size * 0.4 + 0.5) // 1
+    local y1 = (cy - size * 0.6 + 0.5) // 1
+    local x2 = (cx + size * 0.4 + 0.5) // 1
+    local y2 = (cy + size * 0.6 + 0.5) // 1
+    local x3 = (cx - size * 0.6 + 0.5) // 1
     local y3 = cy
     ImGui.DrawList_AddTriangleFilled(dl, x1, y1, x2, y2, x3, y3, color)
   else
-    local x1 = math.floor(cx - size * 0.4 + 0.5)
-    local y1 = math.floor(cy - size * 0.6 + 0.5)
-    local x2 = math.floor(cx - size * 0.4 + 0.5)
-    local y2 = math.floor(cy + size * 0.6 + 0.5)
-    local x3 = math.floor(cx + size * 0.6 + 0.5)
+    local x1 = (cx - size * 0.4 + 0.5) // 1
+    local y1 = (cy - size * 0.6 + 0.5) // 1
+    local x2 = (cx - size * 0.4 + 0.5) // 1
+    local y2 = (cy + size * 0.6 + 0.5) // 1
+    local x3 = (cx + size * 0.6 + 0.5) // 1
     local y3 = cy
     ImGui.DrawList_AddTriangleFilled(dl, x1, y1, x2, y2, x3, y3, color)
   end
@@ -95,10 +95,10 @@ end
 local function draw_spinner_button(ctx, id, x, y, w, h, direction, disabled, hover_alpha)
   local dl = ImGui.GetWindowDrawList(ctx)
 
-  x = math.floor(x + 0.5)
-  y = math.floor(y + 0.5)
-  w = math.floor(w + 0.5)
-  h = math.floor(h + 0.5)
+  x = (x + 0.5) // 1
+  y = (y + 0.5) // 1
+  w = (w + 0.5) // 1
+  h = (h + 0.5) // 1
 
   ImGui.SetCursorScreenPos(ctx, x, y)
   ImGui.InvisibleButton(ctx, id, w, h)
@@ -146,10 +146,10 @@ local function draw_spinner_button(ctx, id, x, y, w, h, direction, disabled, hov
 end
 
 local function draw_value_display(ctx, dl, x, y, w, h, text, hover_alpha, active, disabled)
-  x = math.floor(x + 0.5)
-  y = math.floor(y + 0.5)
-  w = math.floor(w + 0.5)
-  h = math.floor(h + 0.5)
+  x = (x + 0.5) // 1
+  y = (y + 0.5) // 1
+  w = (w + 0.5) // 1
+  h = (h + 0.5) // 1
 
   local bg_color, border_inner, border_outer, text_color
 
@@ -187,7 +187,7 @@ local function draw_value_display(ctx, dl, x, y, w, h, text, hover_alpha, active
   local max_text_w = w - 12
 
   if text_w > max_text_w then
-    local est_chars = math.floor((max_text_w / text_w) * #text * 0.9)
+    local est_chars = ((max_text_w / text_w) * #text * 0.9) // 1
     est_chars = math.max(1, math.min(est_chars, #text - 3))
     text = text:sub(1, est_chars) .. "..."
     text_w = ImGui.CalcTextSize(ctx, text)
@@ -199,8 +199,8 @@ local function draw_value_display(ctx, dl, x, y, w, h, text, hover_alpha, active
     end
   end
 
-  local text_x = math.floor(x + (w - text_w) / 2 + 0.5)
-  local text_y = math.floor(y + (h - text_h) / 2 + 0.5)
+  local text_x = (x + (w - text_w) / 2 + 0.5) // 1
+  local text_y = (y + (h - text_h) / 2 + 0.5) // 1
 
   ImGui.DrawList_AddText(dl, text_x, text_y, text_color, text)
 end
@@ -242,12 +242,12 @@ function M.draw(ctx, opts)
   local new_index = current_index
 
   -- Round starting position
-  x = math.floor(x + 0.5)
-  y = math.floor(y + 0.5)
+  x = (x + 0.5) // 1
+  y = (y + 0.5) // 1
 
   -- Calculate overlapping layout (arrows extend over value display edges)
-  local overlap = math.floor(button_w * 0.3 + 0.5)  -- 30% overlap
-  local value_w = math.floor(total_w - button_w * 2 + overlap * 2 + 0.5)
+  local overlap = (button_w * 0.3 + 0.5) // 1  -- 30% overlap
+  local value_w = (total_w - button_w * 2 + overlap * 2 + 0.5) // 1
   local left_x = x
   local value_x = x + button_w - overlap
   local right_x = x + total_w - button_w

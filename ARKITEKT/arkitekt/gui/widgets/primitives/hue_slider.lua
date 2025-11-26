@@ -14,7 +14,7 @@ local M = {}
 local _locks = {}
 
 local function hsv_rgba_u32(h, s, v, a)
-  local i = math.floor(h * 6)
+  local i = (h * 6) // 1
   local f = h * 6 - i
   local p = v * (1 - s)
   local q = v * (1 - f * s)
@@ -28,10 +28,10 @@ local function hsv_rgba_u32(h, s, v, a)
   elseif i == 4 then r, g, b = t, p, v
   else               r, g, b = v, p, q
   end
-  local R = math.floor(r * 255 + 0.5)
-  local G = math.floor(g * 255 + 0.5)
-  local B = math.floor(b * 255 + 0.5)
-  local A = math.floor((a or 1) * 255 + 0.5)
+  local R = (r * 255 + 0.5) // 1
+  local G = (g * 255 + 0.5) // 1
+  local B = (b * 255 + 0.5) // 1
+  local A = ((a or 1) * 255 + 0.5) // 1
   return (R << 24) | (G << 16) | (B << 8) | A
 end
 
@@ -53,8 +53,8 @@ end
 
 -- Render grab handle (FULL RECTANGLE - NO ROUNDING)
 local function render_grab(dl, gx, y0, y1, GRAB_W, active, hovered)
-  local x_left = math.floor(gx - GRAB_W / 2 + 0.5)
-  local x_right = math.floor(gx + GRAB_W / 2 + 0.5)
+  local x_left = (gx - GRAB_W / 2 + 0.5) // 1
+  local x_right = (gx + GRAB_W / 2 + 0.5) // 1
   local rounding = 0  -- No rounding - full rectangle
 
   -- Shadow
@@ -135,7 +135,7 @@ local function draw_slider_base(ctx, id, value, min_val, max_val, default_val, g
   -- Render grab (snap to whole pixels to prevent aliasing)
   local t = (value - min_val) / (max_val - min_val)
   local gx = clamp(x0 + t * W, x0 + GRAB_W / 2, x1 - GRAB_W / 2)
-  gx = math.floor(gx + 0.5)  -- Snap to nearest pixel
+  gx = (gx + 0.5) // 1  -- Snap to nearest pixel
   render_grab(dl, gx, y0, y1, GRAB_W, active, hovered)
   
   -- Tooltip
@@ -231,9 +231,9 @@ function M.draw_gamma(ctx, id, gamma, opt)
     for i = 0, SEG - 1 do
       local t0 = i / SEG
       local t1 = (i + 1) / SEG
-      
-      local gray0 = math.floor(t0 * 255 + 0.5)
-      local gray1 = math.floor(t1 * 255 + 0.5)
+
+      local gray0 = (t0 * 255 + 0.5) // 1
+      local gray1 = (t1 * 255 + 0.5) // 1
       
       local c0 = (gray0 << 24) | (gray0 << 16) | (gray0 << 8) | 0xFF
       local c1 = (gray1 << 24) | (gray1 << 16) | (gray1 << 8) | 0xFF
