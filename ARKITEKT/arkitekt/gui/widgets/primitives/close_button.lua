@@ -107,7 +107,7 @@ function M.new(opts)
     local hover_alpha = self.hover_alpha:value()
     
     local bg_opacity = self.bg_opacity + (self.bg_opacity_hover - self.bg_opacity) * hover_alpha
-    local bg_color = Colors.with_alpha(self.bg_color, math.floor(255 * bg_opacity * alpha))
+    local bg_color = Colors.with_alpha(self.bg_color, (255 * bg_opacity * alpha) // 1)
     
     local corner_radius = self.size / 2
     Draw.rect_filled(dl, button_x, button_y, button_x + self.size, button_y + self.size, bg_color, corner_radius)
@@ -120,7 +120,7 @@ function M.new(opts)
       icon_color = self.active_color
     end
     
-    local final_icon_color = Colors.with_alpha(icon_color, math.floor(255 * self.icon_opacity * alpha))
+    local final_icon_color = Colors.with_alpha(icon_color, (255 * self.icon_opacity * alpha) // 1)
     
     local center_x = button_x + self.size / 2
     local center_y = button_y + self.size / 2

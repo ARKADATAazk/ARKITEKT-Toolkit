@@ -153,7 +153,7 @@ function Scrollbar:draw(ctx, x, y, height)
   
   local apply_alpha = function(color, alpha)
     local a = color & 0xFF
-    local new_a = math.floor(a * alpha)
+    local new_a = (a * alpha) // 1
     return (color & 0xFFFFFF00) | new_a
   end
   

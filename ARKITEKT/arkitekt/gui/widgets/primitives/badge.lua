@@ -96,7 +96,7 @@ function M.text(ctx, opts)
   local y2 = y + badge_h
 
   -- Background
-  local bg_alpha = math.floor((cfg.bg_color & 0xFF) * (alpha / 255))
+  local bg_alpha = ((cfg.bg_color & 0xFF) * (alpha / 255)) // 1
   local bg_color = (cfg.bg_color & 0xFFFFFF00) | bg_alpha
   ImGui.DrawList_AddRectFilled(dl, x, y, x2, y2, bg_color, cfg.rounding)
 
@@ -136,7 +136,7 @@ function M.icon(ctx, opts)
   local y2 = y + size
 
   -- Background
-  local bg_alpha = math.floor((cfg.bg_color & 0xFF) * (alpha / 255))
+  local bg_alpha = ((cfg.bg_color & 0xFF) * (alpha / 255)) // 1
   local bg_color = (cfg.bg_color & 0xFFFFFF00) | bg_alpha
   ImGui.DrawList_AddRectFilled(dl, x, y, x2, y2, bg_color, cfg.rounding)
 
