@@ -107,19 +107,19 @@ end
 
 function M.get_all_ports(node)
   local ports = {}
-  
+
   if node.ports.sequential_in then
-    table.insert(ports, node.ports.sequential_in)
+    ports[#ports + 1] = node.ports.sequential_in
   end
-  
+
   if node.ports.sequential_out then
-    table.insert(ports, node.ports.sequential_out)
+    ports[#ports + 1] = node.ports.sequential_out
   end
-  
+
   for _, port in ipairs(node.ports.triggers) do
-    table.insert(ports, port)
+    ports[#ports + 1] = port
   end
-  
+
   return ports
 end
 

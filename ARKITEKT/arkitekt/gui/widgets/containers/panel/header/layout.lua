@@ -178,11 +178,11 @@ local function separate_by_alignment(elements)
   for _, element in ipairs(elements) do
     local align = element.align or "left"
     if align == "right" then
-      table.insert(right, element)
+      right[#right + 1] = element
     elseif align == "center" then
-      table.insert(center, element)
+      center[#center + 1] = element
     else
-      table.insert(left, element)
+      left[#left + 1] = element
     end
   end
   

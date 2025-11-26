@@ -496,10 +496,10 @@ function M.try_create_connection(canvas, source_port, target_port)
     return
   end
   
-  local conn = Connection.new_trigger(source_node.guid, target_node.guid, 
+  local conn = Connection.new_trigger(source_node.guid, target_node.guid,
     source_port.event_name, source_port.jump_mode, canvas.config.colors.connection_types.trigger)
-  
-  table.insert(canvas.connections, conn)
+
+  canvas.connections[#canvas.connections + 1] = conn
 end
 
 function M.find_node_with_port(canvas, port)

@@ -1042,7 +1042,7 @@ function M.draw(ctx, dl, x, y, available_width, height, config, state)
         -- Not all tabs fit - re-extend only visible tabs to fill space
         local visible_tabs = {}
         for _, idx in ipairs(visible_indices) do
-          table.insert(visible_tabs, tabs[idx])
+          visible_tabs[#visible_tabs + 1] = tabs[idx]
         end
 
         -- Re-calculate widths for only visible tabs to fill the entire available width

@@ -126,7 +126,7 @@ function M.flatten_groups(groups, ungrouped_items, opts)
       collapsed = group.collapsed,
       count = #group.items,
     }
-    table.insert(flat_items, header_item)
+    flat_items[#flat_items + 1] = header_item
 
     -- Add group items if expanded
     if not group.collapsed then
@@ -147,7 +147,7 @@ function M.flatten_groups(groups, ungrouped_items, opts)
           end
         end
 
-        table.insert(flat_items, wrapped_item)
+        flat_items[#flat_items + 1] = wrapped_item
       end
     end
   end
@@ -167,7 +167,7 @@ function M.flatten_groups(groups, ungrouped_items, opts)
       end
     end
 
-    table.insert(flat_items, wrapped_item)
+    flat_items[#flat_items + 1] = wrapped_item
   end
 
   return flat_items
@@ -274,17 +274,18 @@ function M.organize_items(items, group_fn)
         })
       end
 
-      table.insert(groups_map[group_info.id].items, item)
+      local group_items = groups_map[group_info.id].items
+      group_items[#group_items + 1] = item
     else
       -- Ungrouped item
-      table.insert(ungrouped, item)
+      ungrouped[#ungrouped + 1] = item
     end
   end
 
   -- Convert groups_map to array
   local groups = {}
   for _, group in pairs(groups_map) do
-    table.insert(groups, group)
+    groups[#groups + 1] = group
   end
 
   -- Sort groups by name (optional - users can sort themselves)

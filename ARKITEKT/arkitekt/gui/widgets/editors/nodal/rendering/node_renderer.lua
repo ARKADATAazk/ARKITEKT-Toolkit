@@ -169,7 +169,7 @@ function M.render_triggers_ui(ctx, dl, node, config, chip_color)
     local changed, should_remove = M.render_trigger_item(ctx, node, trigger, i, x1, y_offset, config, chip_color)
     
     if should_remove then
-      table.insert(triggers_to_remove, i)
+      triggers_to_remove[#triggers_to_remove + 1] = i
       needs_port_update = true
     end
     
@@ -304,9 +304,9 @@ function M.render_add_trigger_button(ctx, node, config)
       target_name = "Select Target...",
       mode = "INCREMENTAL",
     }
-    
-    table.insert(node.triggers, new_trigger)
-    
+
+    node.triggers[#node.triggers + 1] = new_trigger
+
     -- Update node structure
     local Node = require('arkitekt.gui.widgets.editors.nodal.core.node')
     Node.update_ports(node)
