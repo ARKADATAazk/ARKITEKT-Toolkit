@@ -247,6 +247,7 @@ function M.new(opts)
     _saved_pos      = nil,
     _saved_size     = nil,
     _pos_size_set   = false,
+    _pos_size_frames = 0,  -- Track frames since first pos/size set (prevents tab flicker)
     _body_open      = false,
     _begun          = false,
     _titlebar       = nil,
@@ -603,13 +604,14 @@ function M.new(opts)
       ImGui.SetNextWindowSize(ctx, self._pre_max_size.w, self._pre_max_size.h, ImGui.Cond_Always)
       self._pending_restore = false
       self._pos_size_set = true
-    elseif not self._pos_size_set then
+    elseif not self._pos_size_set or self._pos_size_frames < 3 then
+      -- Force position/size for first 3 frames to prevent flicker with tabs
       local pos  = self._saved_pos  or self.initial_pos
       local size = self._saved_size or self.initial_size
-      -- Use Once (per session) to override ImGui's .ini persistence with our Settings
-      if pos  and pos.x  and pos.y  then ImGui.SetNextWindowPos(ctx,  pos.x,  pos.y, ImGui.Cond_Once) end
-      if size and size.w and size.h then ImGui.SetNextWindowSize(ctx, size.w, size.h, ImGui.Cond_Once) end
+      if pos  and pos.x  and pos.y  then ImGui.SetNextWindowPos(ctx,  pos.x,  pos.y, ImGui.Cond_Always) end
+      if size and size.w and size.h then ImGui.SetNextWindowSize(ctx, size.w, size.h, ImGui.Cond_Always) end
       self._pos_size_set = true
+      self._pos_size_frames = self._pos_size_frames + 1
     end
     
     if not self.fullscreen.enabled then
