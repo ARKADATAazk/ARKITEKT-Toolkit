@@ -483,4 +483,142 @@ function M.draw_conflict_resolution_modal(ctx, state)
   end
 end
 
+-- Draw save template modal
+function M.draw_save_template_modal(ctx, state)
+  -- Save template modal (for Ctrl+S shortcut)
+  if state.saving_template then
+    ImGui.OpenPopup(ctx, "Save Template")
+  end
+
+  if ImGui.BeginPopupModal(ctx, "Save Template", nil, ImGui.WindowFlags_AlwaysAutoResize) then
+    ImGui.Text(ctx, "Save selected track(s) as template")
+    ImGui.Spacing(ctx)
+    ImGui.Separator(ctx)
+    ImGui.Spacing(ctx)
+
+    -- Template name input
+    ImGui.Text(ctx, "Template Name:")
+    ImGui.SetNextItemWidth(ctx, UI.FIELD.RENAME_WIDTH)
+
+    -- Initialize field if empty
+    if Ark.InputText.get_text("save_template_name") == "" and state.save_template_buffer == "" then
+      -- Try to get current selected track name as default
+      local track = reaper.GetSelectedTrack(0, 0)
+      if track then
+        local _, track_name = reaper.GetTrackName(track)
+        state.save_template_buffer = track_name ~= "" and track_name or "New Template"
+        Ark.InputText.set_text("save_template_name", state.save_template_buffer)
+      else
+        state.save_template_buffer = "New Template"
+        Ark.InputText.set_text("save_template_name", state.save_template_buffer)
+      end
+    end
+
+    local changed, new_name = Ark.InputText.draw_at_cursor(ctx, {
+      width = UI.FIELD.RENAME_WIDTH,
+      height = UI.FIELD.RENAME_HEIGHT,
+      text = state.save_template_buffer,
+    }, "save_template_name")
+
+    if changed then
+      state.save_template_buffer = new_name
+    end
+
+    -- Auto-focus input on first frame
+    if ImGui.IsWindowAppearing(ctx) then
+      ImGui.SetKeyboardFocusHere(ctx, -1)
+    end
+
+    ImGui.Spacing(ctx)
+
+    -- Folder path input (optional)
+    ImGui.Text(ctx, "Subfolder (optional):")
+    ImGui.SetNextItemWidth(ctx, UI.FIELD.RENAME_WIDTH)
+
+    local folder_changed, new_folder = Ark.InputText.draw_at_cursor(ctx, {
+      width = UI.FIELD.RENAME_WIDTH,
+      height = UI.FIELD.RENAME_HEIGHT,
+      text = state.save_template_folder or "",
+      placeholder = "e.g., Drums/Kicks",
+    }, "save_template_folder")
+
+    if folder_changed then
+      state.save_template_folder = new_folder
+    end
+
+    ImGui.Spacing(ctx)
+
+    -- Options checkboxes
+    ImGui.Text(ctx, "Options:")
+    ImGui.Spacing(ctx)
+
+    local include_items_changed, include_items = ImGui.Checkbox(ctx, "Include Media Items", state.save_template_include_items or false)
+    if include_items_changed then
+      state.save_template_include_items = include_items
+    end
+
+    local include_envelopes_changed, include_envelopes = ImGui.Checkbox(ctx, "Include Automation Envelopes",
+      state.save_template_include_envelopes == nil and true or state.save_template_include_envelopes)
+    if include_envelopes_changed then
+      state.save_template_include_envelopes = include_envelopes
+    end
+
+    ImGui.Spacing(ctx)
+    ImGui.Separator(ctx)
+    ImGui.Spacing(ctx)
+
+    -- Buttons
+    local ok_clicked = Ark.Button.draw_at_cursor(ctx, {
+      label = "Save",
+      width = 140,
+      height = UI.BUTTON.HEIGHT_DEFAULT
+    }, "save_template_ok")
+
+    if ok_clicked or ImGui.IsKeyPressed(ctx, ImGui.Key_Enter) then
+      if state.save_template_buffer ~= "" then
+        local Operations = require('TemplateBrowser.domain.template.operations')
+        local success, result = Operations.save_template({
+          name = state.save_template_buffer,
+          folder = state.save_template_folder,
+          include_items = state.save_template_include_items or false,
+          include_envelopes = state.save_template_include_envelopes == nil and true or state.save_template_include_envelopes,
+        }, state)
+
+        if success then
+          -- Rescan templates to show the new one
+          local Scanner = require('TemplateBrowser.domain.template.scanner')
+          Scanner.scan_templates(state)
+        end
+      end
+
+      -- Reset state
+      state.saving_template = false
+      state.save_template_buffer = ""
+      state.save_template_folder = ""
+      state.save_template_include_items = false
+      state.save_template_include_envelopes = true
+      ImGui.CloseCurrentPopup(ctx)
+    end
+
+    ImGui.SameLine(ctx)
+    local cancel_clicked = Ark.Button.draw_at_cursor(ctx, {
+      label = "Cancel",
+      width = 140,
+      height = UI.BUTTON.HEIGHT_DEFAULT
+    }, "save_template_cancel")
+
+    if cancel_clicked or ImGui.IsKeyPressed(ctx, ImGui.Key_Escape) then
+      -- Reset state
+      state.saving_template = false
+      state.save_template_buffer = ""
+      state.save_template_folder = ""
+      state.save_template_include_items = false
+      state.save_template_include_envelopes = true
+      ImGui.CloseCurrentPopup(ctx)
+    end
+
+    ImGui.EndPopup(ctx)
+  end
+end
+
 return M

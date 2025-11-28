@@ -31,6 +31,12 @@ M.SHORTCUTS = {
     description = "Insert selected template as new track",
   },
   {
+    key = "S",
+    mods = {"Ctrl"},
+    action = "save_template",
+    description = "Save selected track(s) as template",
+  },
+  {
     key = "F2",
     mods = {},
     action = "rename_template",

@@ -505,6 +505,9 @@ function GUI:draw(ctx, shell_state)
       if self.state.selected_template then
         TemplateOps.insert_as_new_track(self.state.selected_template.path, self.state.selected_template.uuid, self.state)
       end
+    elseif action == "save_template" then
+      -- Open save template modal
+      self.state.saving_template = true
     elseif action == "focus_search" then
       -- Focus search box (will be handled by container)
       self.state.focus_search = true
@@ -675,6 +678,7 @@ function GUI:draw(ctx, shell_state)
   TemplateModalsView.draw_tag_context_menu(ctx, self.state)
   TemplateModalsView.draw_vst_context_menu(ctx, self.state)
   TemplateModalsView.draw_template_rename_modal(ctx, self.state)
+  TemplateModalsView.draw_save_template_modal(ctx, self.state)
   TemplateModalsView.draw_conflict_resolution_modal(ctx, self.state)
 
   -- Status bar at the bottom
