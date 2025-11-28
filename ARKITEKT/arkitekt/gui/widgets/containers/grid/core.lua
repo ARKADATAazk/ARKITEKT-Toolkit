@@ -4,6 +4,7 @@
 -- UPDATED: Now handles extended input areas (padding zones)
 -- FIXED: Tiles outside grid bounds are no longer interactive or rendered
 -- FIXED: Respects parent panel scrollable bounds
+-- API_MATCHING: Added ImGui-style Ark.Grid(ctx, opts) API with hidden state
 
 package.path = reaper.ImGui_GetBuiltinPath() .. '/?.lua;' .. package.path
 local ImGui = require 'imgui' '0.10'
@@ -26,6 +27,47 @@ local DropZones  = require('arkitekt.gui.widgets.containers.grid.drop_zones')
 
 local M = {}
 local hexrgb = Colors.hexrgb
+
+-- ============================================================================
+-- HIDDEN STATE REGISTRY (ImGui-style API)
+-- ============================================================================
+-- Stores Grid instances keyed by ID, with access tracking for automatic cleanup
+
+local _grid_state = {
+  instances = {},      -- Grid instances by ID
+  access_times = {},   -- Last access time per ID
+  frame_ids = {},      -- IDs used this frame (for duplicate detection)
+  last_frame = 0,      -- Last frame number for frame_ids reset
+}
+
+local STALE_THRESHOLD = 30.0  -- Remove instances not accessed for 30 seconds
+
+-- Debug mode: warn about duplicate IDs
+local DEBUG = true
+
+--- Clean up stale grid instances
+local function cleanup_stale_instances()
+  local now = reaper.time_precise()
+  for id, last_access in pairs(_grid_state.access_times) do
+    if now - last_access > STALE_THRESHOLD then
+      _grid_state.instances[id] = nil
+      _grid_state.access_times[id] = nil
+    end
+  end
+end
+
+--- Reset frame tracking (call at start of each frame)
+local function reset_frame_tracking()
+  local frame = ImGui.GetFrameCount and ImGui.GetFrameCount() or reaper.time_precise()
+  if frame ~= _grid_state.last_frame then
+    _grid_state.frame_ids = {}
+    _grid_state.last_frame = frame
+    -- Periodic cleanup every few seconds
+    if math.random() < 0.01 then
+      cleanup_stale_instances()
+    end
+  end
+end
 
 local DEFAULTS = {
   layout = { speed = 14.0, snap_epsilon = 0.5 },
@@ -1175,4 +1217,272 @@ function Grid:clear()
   self.panel_clip_bounds = nil
 end
 
-return M
+-- ============================================================================
+-- IMGui-STYLE API: Ark.Grid(ctx, opts)
+-- ============================================================================
+
+-- Track deprecation warnings to avoid spamming
+local _new_warned = {}
+
+--- @deprecated Use Ark.Grid(ctx, opts) instead
+--- Original Grid.new() - kept for backward compatibility
+local _original_new = M.new
+function M.new(opts)
+  opts = opts or {}
+  local id = opts.id or "grid"
+
+  -- Warn once per unique call site
+  if not _new_warned[id] then
+    _new_warned[id] = true
+    local info = debug.getinfo(2, "Sl")
+    local source = info and info.short_src or "unknown"
+    local line = info and info.currentline or 0
+    reaper.ShowConsoleMsg(string.format(
+      "[ARKITEKT] Grid.new() is deprecated. Use Ark.Grid(ctx, opts) instead.\n  at %s:%d (id='%s')\n",
+      source, line, id
+    ))
+  end
+
+  return _original_new(opts)
+end
+
+--- Create a new Grid instance internally (no deprecation warning)
+local function _create_grid_instance(opts)
+  return _original_new(opts)
+end
+
+--- Build result object from grid state
+--- @param grid table Grid instance
+--- @return table Result object with all state info
+local function _build_result(grid)
+  local items = grid.get_items()
+  local num_items = #items
+
+  -- Selection state
+  local selected_keys = grid.selection:selected_keys()
+  local selection_changed = grid._selection_changed_this_frame or false
+
+  -- Drag state
+  local dragging = grid.drag:is_active()
+  local drag_keys = dragging and grid.drag:get_dragged_ids() or {}
+  local dropped = grid._drop_occurred_this_frame or false
+  local drop_target_key = nil
+  local drop_index = grid.drag:get_target_index()
+
+  -- Reorder state
+  local reordered = grid._reorder_occurred_this_frame or false
+  local new_order = grid._new_order_this_frame
+
+  -- Inline edit state
+  local editing_key = grid._editing_key
+  local edit_completed = grid._edit_completed_this_frame or false
+  local edit_value = grid._edit_value_this_frame
+
+  -- Click tracking
+  local clicked_key = grid._clicked_key_this_frame
+  local double_clicked_key = grid._double_clicked_key_this_frame
+  local right_clicked_key = grid._right_clicked_key_this_frame
+
+  return {
+    -- Layout info
+    visible_count = grid._visible_count or num_items,
+    total_count = num_items,
+    columns = grid.last_layout_cols or 1,
+    scroll_y = grid._scroll_y or 0,
+
+    -- Selection
+    selected_keys = selected_keys,
+    selection_changed = selection_changed,
+    clicked_key = clicked_key,
+    double_clicked_key = double_clicked_key,
+    right_clicked_key = right_clicked_key,
+
+    -- Drag
+    dragging = dragging,
+    drag_keys = drag_keys,
+    dropped = dropped,
+    drop_target_key = drop_target_key,
+    drop_index = drop_index,
+
+    -- Reorder
+    reordered = reordered,
+    new_order = new_order,
+
+    -- Inline edit
+    editing_key = editing_key,
+    edit_completed = edit_completed,
+    edit_value = edit_value,
+
+    -- Hover
+    hovered_key = grid.hover_id,
+
+    -- Internal: access to grid instance for advanced use
+    _instance = grid,
+  }
+end
+
+--- Reset per-frame tracking flags on grid instance
+local function _reset_frame_flags(grid)
+  grid._selection_changed_this_frame = false
+  grid._drop_occurred_this_frame = false
+  grid._reorder_occurred_this_frame = false
+  grid._new_order_this_frame = nil
+  grid._edit_completed_this_frame = false
+  grid._edit_value_this_frame = nil
+  grid._clicked_key_this_frame = nil
+  grid._double_clicked_key_this_frame = nil
+  grid._right_clicked_key_this_frame = nil
+end
+
+--- Update grid instance with per-frame opts
+local function _update_grid_from_opts(grid, opts)
+  -- Update items getter
+  if opts.items then
+    grid.get_items = function() return opts.items end
+  end
+
+  -- Update callbacks (these may change per-frame)
+  if opts.render then
+    grid.render_tile = opts.render
+  end
+
+  -- Update feature flags
+  if opts.selectable ~= nil then
+    grid._selectable = opts.selectable
+  end
+  if opts.draggable ~= nil then
+    grid._draggable = opts.draggable
+  end
+  if opts.reorderable ~= nil then
+    grid._reorderable = opts.reorderable
+  end
+
+  -- Update callbacks in behaviors
+  if opts.on_select then
+    grid.behaviors = grid.behaviors or {}
+    local user_on_select = opts.on_select
+    grid.behaviors.on_select = function(g, keys)
+      grid._selection_changed_this_frame = true
+      user_on_select(keys)
+    end
+  end
+
+  if opts.on_drag_start then
+    grid.behaviors = grid.behaviors or {}
+    local user_on_drag_start = opts.on_drag_start
+    grid.behaviors.drag_start = function(g, keys)
+      user_on_drag_start(keys)
+    end
+  end
+
+  if opts.on_reorder then
+    grid.behaviors = grid.behaviors or {}
+    local user_on_reorder = opts.on_reorder
+    grid.behaviors.reorder = function(g, new_order)
+      grid._reorder_occurred_this_frame = true
+      grid._new_order_this_frame = new_order
+      user_on_reorder(new_order)
+    end
+  end
+
+  if opts.on_right_click then
+    grid.behaviors = grid.behaviors or {}
+    local user_on_right_click = opts.on_right_click
+    grid.behaviors['click:right'] = function(g, key, selected)
+      grid._right_clicked_key_this_frame = key
+      user_on_right_click(key, selected)
+    end
+  end
+
+  if opts.on_double_click then
+    grid.behaviors = grid.behaviors or {}
+    local user_on_double_click = opts.on_double_click
+    grid.behaviors.double_click = function(g, key)
+      grid._double_clicked_key_this_frame = key
+      user_on_double_click(key)
+    end
+  end
+end
+
+--- ImGui-style Grid API
+--- @param ctx userdata ImGui context
+--- @param opts table Options table (id required)
+--- @return table Result object with selection, drag, reorder state
+function M.draw(ctx, opts)
+  -- Reset frame tracking
+  reset_frame_tracking()
+
+  -- Validate required 'id' field
+  if not opts or not opts.id then
+    error("Ark.Grid: 'id' field is required. Example: Ark.Grid(ctx, {id = 'my_grid', items = {...}})", 2)
+  end
+
+  local id = opts.id
+
+  -- Debug: Check for duplicate IDs in same frame
+  if DEBUG and _grid_state.frame_ids[id] then
+    local info = debug.getinfo(2, "Sl")
+    local source = info and info.short_src or "unknown"
+    local line = info and info.currentline or 0
+    reaper.ShowConsoleMsg(string.format(
+      "[ARKITEKT] Warning: Ark.Grid duplicate ID '%s' in same frame - state will be shared!\n  at %s:%d\n",
+      id, source, line
+    ))
+  end
+  _grid_state.frame_ids[id] = true
+
+  -- Get or create grid instance
+  local grid = _grid_state.instances[id]
+  if not grid then
+    -- Create new instance with initial opts
+    local create_opts = {
+      id = id,
+      gap = opts.gap,
+      min_col_w = opts.min_col_w or opts.tile_width,
+      fixed_tile_h = opts.fixed_tile_h or opts.tile_height,
+      key = opts.key,
+      render_tile = opts.render,
+      get_items = opts.items and function() return opts.items end or function() return {} end,
+      behaviors = {},
+      config = opts.config,
+      extend_input_area = opts.extend_input_area or opts.padding,
+      clip_rendering = opts.clip_rendering,
+      virtual = opts.virtual,
+      virtual_buffer_rows = opts.virtual_buffer_rows,
+      accept_external_drops = opts.accept_external_drops,
+      external_drag_check = opts.external_drag_check,
+      is_copy_mode_check = opts.is_copy_mode_check,
+      on_external_drop = opts.on_external_drop,
+      on_click_empty = opts.on_click_empty,
+      render_overlays = opts.render_overlays,
+    }
+    grid = _create_grid_instance(create_opts)
+    _grid_state.instances[id] = grid
+  end
+
+  -- Update access time
+  _grid_state.access_times[id] = reaper.time_precise()
+
+  -- Reset per-frame flags
+  _reset_frame_flags(grid)
+
+  -- Update instance with current opts
+  _update_grid_from_opts(grid, opts)
+
+  -- Draw the grid
+  grid:draw(ctx)
+
+  -- Build and return result object
+  return _build_result(grid)
+end
+
+-- ============================================================================
+-- MODULE EXPORT
+-- ============================================================================
+
+-- Make module callable: Ark.Grid(ctx, opts) → M.draw(ctx, opts)
+return setmetatable(M, {
+  __call = function(_, ctx, opts)
+    return M.draw(ctx, opts)
+  end
+})

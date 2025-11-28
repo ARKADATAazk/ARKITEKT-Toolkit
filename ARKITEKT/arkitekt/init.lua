@@ -57,6 +57,7 @@ local MODULES = {
   Splitter = 'arkitekt.gui.widgets.primitives.splitter',
 
   -- Containers
+  Grid = 'arkitekt.gui.widgets.containers.grid.core',
   Panel = 'arkitekt.gui.widgets.containers.panel',
   SlidingZone = 'arkitekt.gui.widgets.containers.sliding_zone',
   TileGroup = 'arkitekt.gui.widgets.containers.tile_group',
